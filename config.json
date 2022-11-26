@@ -1,0 +1,32 @@
+{
+  "DbConnection": {
+    "DBHost": "localhost",
+    "DBPort": 5432,
+    "DBName":  "tickets",
+    "DBUser": "ts_user",
+    "DBPass": "ts_pass"
+  },
+  "LoggerPath": "",
+  "Server": {
+    "Address": "0.0.0.0",
+    "Port": "8081",
+    "TLS": false,
+    "CertificatePath": "./ssl/server.crt",
+    "KeyPath": "./ssl/server.key"
+  },
+  "WsConfig":{
+    "WsAllowedOrigin": "http://localhost:8081",
+    "BrPref":  "WBR_",
+    "WriteWait": 10,
+    "MaxMessageSize": 1024,
+    "PingWait": 60,
+    "PongWait": 60,
+    "PingPeriod": 10,
+    "CloseGracePeriod" : 120
+  },
+  "FrontRoute": {
+    "WebResFolder": "webres",
+    "MainTemplate": "./webres/html/main.html",
+    "LoginTemplate": "./webres/html/login.html"
+  }
+}
