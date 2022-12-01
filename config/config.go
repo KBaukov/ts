@@ -14,8 +14,8 @@ type Configuration struct {
 		DBUser string
 		DBPass string
 	}
-	LoggerPath         string
-	Server             struct {
+	LoggerPath string
+	Server     struct {
 		Address         string
 		Port            string
 		TLS             bool
@@ -23,19 +23,26 @@ type Configuration struct {
 		KeyPath         string
 	}
 	WsConfig struct {
-		WsAllowedOrigin string
-		BrPref string
-		PingPeriod int
-		WriteWait int
-		MaxMessageSize int64
-		PingWait int
-		PongWait int
+		WsAllowedOrigin  string
+		BrPref           string
+		PingPeriod       int
+		WriteWait        int
+		MaxMessageSize   int64
+		PingWait         int
+		PongWait         int
 		CloseGracePeriod int
 	}
 	FrontRoute struct {
-		WebResFolder string
-		MainTemplate string
+		WebResFolder  string
+		MainTemplate  string
 		LoginTemplate string
+	}
+	PaySecrets struct {
+		PKey        string
+		AutoClose   int
+		Template    string
+		Curr        string
+		Description string
 	}
 }
 

@@ -39,19 +39,7 @@ type sessData struct {
 }
 
 func init() {
-	//gob.Register(gocloak.JWT{})
-	//gob.Register( "" )
-	//gob.Register(ent.User{})
 
-	//sessStore.Options = &sessions.Options{
-	//	Domain:   "*",
-	//	Path:     "/",
-	//	MaxAge:   3600 * 8, // 8 hours
-	//	HttpOnly: false,
-	//}
-	//
-	//client = gocloak.NewClient(configURL)
-	//ctx = context.Background()
 }
 
 type errData struct {
@@ -70,6 +58,31 @@ func ServeWebRes(w http.ResponseWriter, r *http.Request) {
 	//	http.ServeFile(w, r, "."+r.URL.Path)
 	//} else {
 	http.ServeFile(w, r, "./"+webres+r.URL.Path)
+	//}
+
+}
+
+func ServePagesRes(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	var ff string
+	log.Println("###: ", path)
+	if path == "/paysuccess" {
+		ff = "/pages/paysuccess.html"
+	}
+	if path == "/crocusrules" {
+		ff = "/pages/crocus_rules.html"
+	}
+	if path == "/confidential" {
+		ff = "/pages/confidential.html"
+	}
+	if path == "/vozvrat" {
+		ff = "/pages/vozvrat.html"
+	}
+	if path == "/oferta" {
+		ff = "/pages/oferta.html"
+	}
+
+	http.ServeFile(w, r, "./"+webres+ff)
 	//}
 
 }
@@ -97,7 +110,7 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			return
 		}
 
-		if r.URL.Path == "/api/seatstates" && r.Method == "GET" {
+		if r.URL.Path == "/api/seatstates" && r.Method == "GET" { //
 
 			eId := r.FormValue("event_id")
 			eventId, err := strconv.Atoi(eId)
@@ -129,8 +142,44 @@ func ServeApi(db db.Database) http.HandlerFunc {
 				log.Printf("Ошибка установки статусов мест (seatIds: %v ): %v", seatIds, err)
 			} else {
 				msg := actionSeatUpdate(seatIds)
-				hub.sendDataToWeb(msg, "TS_system")
+				hub.sendDataToWeb(msg, "TS_system", nil)
 			}
+			apiDataResponse(w, []int{}, err)
+			return
+		}
+
+		if r.URL.Path == "/api/payaction" && r.Method == "POST" {
+
+			seatIds := r.FormValue("seat_ids")
+			orderNum := r.FormValue("order_number")
+			code := r.FormValue("code")
+			message := r.FormValue("message")
+			success := r.FormValue("success")
+			reson := r.FormValue("reson")
+			stage := r.FormValue("stage")
+
+			log.Printf("Incomming change {stage: %v, seatIds: %v, orderNum: %v, code: %v, message: %v, success: %v, reson: %v}",
+				stage, seatIds, orderNum, code, message, success, reson)
+
+			if stage == "payComplete" {
+				_, err := db.SetSeatStatess(seatIds, 2)
+				if err != nil {
+					http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+					log.Printf("Ошибка смены статуса места (seatIds: %v ): %v", seatIds, err)
+				} else {
+					msg := actionSeatUpdate(seatIds)
+					hub.sendDataToWeb(msg, "TS_system", nil)
+				}
+			}
+
+			// Логирование в заказ
+			_, err := db.OrderLog("pay", stage, orderNum, code, message, success, reson)
+			if err != nil {
+				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+				log.Printf("Ошибка записи в лог заказа (stage: %v, orderNum: %v, code: %v, message: %v, success: %v, reson: %v ): %v",
+					stage, orderNum, code, message, success, reson, err)
+			}
+
 			apiDataResponse(w, []int{}, err)
 			return
 		}
@@ -139,7 +188,7 @@ func ServeApi(db db.Database) http.HandlerFunc {
 
 			message := r.FormValue("msg")
 
-			hub.sendDataToWeb(message, "TS_system")
+			hub.sendDataToWeb(message, "TS_system", nil)
 
 			apiDataResponse(w, "", nil)
 			return
@@ -195,187 +244,29 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			}
 
 			ext := ent.PayDataExt{name, email, phone, seatIds}
-			pData := ent.PayData{"test_api_00000000000000000000002", "Fortune 2050: Оплата билетов", amount,
-				"RUB", email, orderNumber, email, "mini", 3, ext}
+			pData := ent.PayData{cfg.PaySecrets.PKey, cfg.PaySecrets.Description, amount,
+				cfg.PaySecrets.Curr, email, orderNumber, email,
+				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext}
 
 			apiDataResponse(w, pData, nil)
 			return
 		}
 
-		//if r.URL.Path == "/api/registry/add" {
-		//	var (
-		//		err    error
-		//		dept   int
-		//		selfId int
-		//	)
-		//
-		//	pKey := r.PostFormValue("parent_key");
-		//	env := r.FormValue("env");
-		//
-		//	lev := r.PostFormValue("dept");
-		//	if lev != "" && lev != "nan" {
-		//		dept, err = strconv.Atoi(lev)
-		//		if err != nil {
-		//			log.Println("err:", err.Error())
-		//		}
-		//	}
-		//
-		//	value := r.PostFormValue("value")
-		//	key := r.PostFormValue("key")
-		//	description := r.PostFormValue("description")
-		//	ext := r.PostFormValue("ext")
-		//	owner := r.PostFormValue("owner")
-		//	sId := r.PostFormValue("self_id")
-		//	if sId != "" && sId != "nan" {
-		//		selfId, err = strconv.Atoi(sId)
-		//		if err != nil {
-		//			log.Println("err:", err.Error())
-		//		}
-		//	}
-		//
-		//	id, err := db.RegistryNodeCreate(pKey, selfId, key, value, dept, description, ext, env, owner, user);
-		//	if err != nil {
-		//		http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
-		//		log.Printf("Ошибка создания ноды реестра (parent_key: %v, key: %v,value: %v, dept: %i, description: %v, ext: %v): %v", pKey, key, value, dept, description, ext, err)
-		//	}
-		//
-		//	apiDataResponse(w, id, err)
-		//	return;
-		//}
-		//
-		//if r.URL.Path == "/api/registry/update" {
-		//	var (
-		//		selId int
-		//		err   error
-		//		dept  int
-		//	)
-		//
-		//	pKey := r.PostFormValue("parent_key");
-		//	env := r.FormValue("env");
-		//	sId := r.PostFormValue("self_id");
-		//	if sId != "" && sId != "nan" {
-		//		selId, err = strconv.Atoi(sId)
-		//		if err != nil {
-		//			log.Println("err:", err.Error())
-		//		}
-		//	}
-		//	lev := r.PostFormValue("dept");
-		//	if lev != "" && lev != "nan" {
-		//		dept, err = strconv.Atoi(lev)
-		//		if err != nil {
-		//			log.Println("err:", err.Error())
-		//		}
-		//	}
-		//	value := r.PostFormValue("value")
-		//	key := r.PostFormValue("key")
-		//	oldKey := r.PostFormValue("old_key")
-		//	description := r.PostFormValue("description")
-		//	ext := r.PostFormValue("ext")
-		//	owner := r.PostFormValue("owner")
-		//
-		//	err = db.RegistryNodeUpdate(pKey, oldKey, selId, key, value, dept, description, ext, env, owner, user);
-		//	if err != nil {
-		//		http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
-		//		log.Printf("Ошибка изменения ноды реестра (old_key: %v,key: %v,value: %v, dept: %i, description: %v, ext: %v): %v", oldKey, key, value, dept, description, ext, err)
-		//	}
-		//
-		//	apiDataResponse(w, []string{}, err)
-		//	return;
-		//}
-		//
-		//if r.URL.Path == "/api/registry/delete" {
-		//	var id int;
-		//	var err error;
-		//	key := strings.ToLower(r.FormValue("key"));
-		//	env := strings.ToLower(r.FormValue("env"));
-		//
-		//	err = db.RegistryNodeDelete(key, env, user);
-		//	if err != nil {
-		//		http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
-		//		log.Printf("Ошибка elfktybz ноды реестра (id: %i): %v", id, err)
-		//	}
-		//
-		//	apiDataResponse(w, []string{}, err)
-		//	return;
-		//}
-		//
-		//if r.URL.Path == "/api/dict" {
-		//
-		//	key := strings.ToLower(r.FormValue("key"))
-		//	env := strings.ToLower(r.FormValue("env"));
-		//
-		//	dict, err := db.GetDictionary(key, env)
-		//	if err != nil {
-		//		http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
-		//		log.Printf("Ошибка доступа у справочнику (key: %v): %v", key, err)
-		//	}
-		//
-		//	apiDataResponse(w, dict, err)
-		//	return;
-		//}
-		//if r.URL.Path == "/api/node/diff" {
-		//
-		//	pKey := r.FormValue("parent_key");
-		//	env := r.FormValue("env");
-		//	registry, err := db.GetTreeNodeDiff(pKey, env)
-		//	if err != nil {
-		//		http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
-		//		log.Printf("Ошибка получения реестра (parKey: %v): %v", pKey, err)
-		//	}
-		//	apiDataResponse(w, registry, err)
-		//	return;
-		//}
-		//if r.URL.Path == "/api/node/history" {
-		//
-		//	key := r.FormValue("key");
-		//	env := r.FormValue("env");
-		//	history, err := db.GetChangeHistory(key, env);
-		//	if err != nil {
-		//		http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
-		//		log.Printf("Ошибка получения реестра (parKey: %v): %v", key, err)
-		//	}
-		//	apiDataResponse(w, history, err)
-		//	return;
-		//}
-		////###################
-		//if r.URL.Path == "/api/users" {
-		//	users, err := db.GetUsers()
-		//	apiDataResponse(w, users, err)
-		//}
-		//if r.URL.Path == "/api/user/edit" {
-		//	id := r.PostFormValue("id")
-		//	intId, err := strconv.Atoi(id)
-		//	if err != nil {
-		//		log.Println("err:", err.Error())
-		//	}
-		//
-		//	login := r.PostFormValue("login")
-		//	pass := r.PostFormValue("pass")
-		//	pass, err = HashPass(pass)
-		//	if err != nil {
-		//		log.Println("Ошибка хеширования", err)
-		//	}
-		//	usrType := r.PostFormValue("user_type")
-		//	actFlag := r.PostFormValue("active_flag")
-		//	lastVs := r.PostFormValue("last_visit")
-		//	lastV, err := time.Parse("2006-01-02T00:00:00Z", lastVs)
-		//	if err != nil {
-		//		log.Println("date forma validation error:", err.Error())
-		//	}
-		//
-		//	_, err = db.UpdUser(intId, login, pass, usrType, actFlag, lastV)
-		//	apiDataResponse(w, []int{}, err)
-		//}
-		//if r.URL.Path == "/api/user/delete" {
-		//	id := r.PostFormValue("id")
-		//	intId, err := strconv.Atoi(id)
-		//	if err != nil {
-		//		log.Println("err:", err.Error())
-		//	}
-		//
-		//	_, err = db.DelUser(intId)
-		//	apiDataResponse(w, []int{}, err)
-		//}
+		if r.URL.Path == "/api/seattarifs" && r.Method == "GET" {
+
+			eId := r.FormValue("event_id")
+			eventId, err := strconv.Atoi(eId)
+			if err != nil {
+				log.Println("err:", err.Error())
+			}
+			tariffs, err := db.GetSeatTarif(eventId)
+			if err != nil {
+				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+				log.Printf("Ошибка запроса информации о тарифах (eventId: %v ): %v", eventId, err)
+			}
+			apiDataResponse(w, tariffs, err)
+			return
+		}
 
 		return
 	}
@@ -407,19 +298,14 @@ func apiDataResponse(w http.ResponseWriter, data interface{}, err error) {
 	}
 }
 
-//########################## helpers ############################
-
+// ########################## helpers ############################
 func actionSeatUpdate(ids string) string {
 	idss := strings.Split(ids, " ")
-
 	var cmd = "{ \"action\":\"seatStateUpdate\", \"data\": ["
-
 	for _, v := range idss {
 		cmd += "\"" + v + "\" ,"
 	}
-
 	cmd += "\" \" ] }"
-
 	return cmd
 }
 

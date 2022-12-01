@@ -15,7 +15,9 @@ var (
 	Cfg = config.LoadConfig("config.json")
 )
 
-func init() {}
+func init() {
+
+}
 
 func main() {
 
@@ -50,7 +52,7 @@ func main() {
 		log.Printf("Open connections:", stats)
 		_, err = db.Conn.Exec("select count(*) from event;")
 		if err != nil {
-			log.Printf("Не удалось установить настройки базы данных: %v", err)
+			log.Printf("Не удалось установить настройки базы данных: %v", err, err)
 			return
 		}
 		defer db.Conn.Close()
@@ -66,7 +68,11 @@ func main() {
 	http.HandleFunc("/css/", handle.ServeWebRes)
 	http.HandleFunc("/js/", handle.ServeWebRes)
 	http.HandleFunc("/images/", handle.ServeWebRes)
-	http.HandleFunc("/files/", handle.ServeWebRes)
+	http.HandleFunc("/paysuccess", handle.ServePagesRes)
+	http.HandleFunc("/crocusrules", handle.ServePagesRes)
+	http.HandleFunc("/confidential", handle.ServePagesRes)
+	http.HandleFunc("/vozvrat", handle.ServePagesRes)
+	http.HandleFunc("/oferta", handle.ServePagesRes)
 	http.HandleFunc("/api/", handle.ServeApi(db))
 	http.HandleFunc("/ws", handle.ServeWs(db))
 
@@ -85,4 +91,14 @@ func main() {
 		}
 	}
 
+	log.Print("Сервер запущен: ", listenString)
 }
+
+//func inBackground(db db.Database) {
+//	ticker := time.NewTicker(30 * time.Second) //time.Minute)
+//
+//	for now := range ticker.C {
+//		db.ClearExpiredReserves()
+//		log.Println(now, "#### Clear expired reserved success #####")
+//	}
+//}

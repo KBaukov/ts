@@ -82,16 +82,19 @@ func (h *Hub) getConnByDevId(devId string) *Conn {
 	return nil
 }
 
-func (h *Hub) sendDataToWeb(msg string, sender string) {
+func (h *Hub) sendDataToWeb(msg string, sender string, excludeC *Conn) {
 	for conn := range h.connections {
 		assDev := conn.deviceId
 		//assRcp := WsAsignConns[assDev]
-		if strings.Contains(assDev, brPref) { // && sender==assRcp {
-			if !sendMsg(conn, msg) {
-				log.Println("# Send data to " + assDev + " failed.  #")
-			} else {
-				log.Println("# Send data to " + assDev + " success. #")
+		if conn != excludeC {
+			if strings.Contains(assDev, brPref) { // && sender==assRcp {
+				if !sendMsg(conn, msg) {
+					log.Println("# Send data to " + assDev + " failed.  #")
+				} else {
+					log.Println("# Send data to " + assDev + " success. #")
+				}
 			}
 		}
+
 	}
 }

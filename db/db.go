@@ -2,7 +2,9 @@ package db
 
 import (
 	_ "encoding/json"
+	"fmt"
 	"github.com/KBaukov/ts/ent"
+	"github.com/KBaukov/ts/esend"
 	_ "math"
 	_ "reflect"
 	_ "sort"
@@ -29,6 +31,7 @@ const (
 
 	getSeatStatesQuery = `select seat_id, svg_id, state from seats where tariff_id in (select tariff_id from tariff where event_id= $1 ) order by seat_id;`
 	setSeatStateQuery  = `update seats set state = $1 where svg_id = $2;`
+	checkSeaState      = `select state from seats where svg_id = $1;`
 
 	getSeatsInfoQuery = `select s.svg_id, t.tariff_name, s.seat->>'zone' as zone, s.seat->>'row' as row_number, s.seat->>'place' as seat_number,  
 t.price::numeric::int as price from seats s, tariff t  
@@ -40,16 +43,33 @@ and s.tariff_id =t.tariff_id;`
 
 	reserveSeatQuery    = `insert into reserv (seat_id) values ($1);`
 	unreserveSeatQuery  = `delete from reserv where seat_id = (select seat_id from seats where svg_id = $1);`
-	checkSeatForReserve = `select seat_id from seats where svg_id = $1 and state = 0;`
+	checkSeatForReserve = `select seat_id from seats where svg_id = $1;`
 
 	getLastOrderByEvent = `select order_number from orders where order_id = (select max(order_id) as order_id from orders where event_id = $1 );`
-	createNewOrder      = `insert into orders (order_number, order_staus, order_log, customer_data, event_id, amount, amount_currency) 
+	createNewOrder      = `insert into orders (order_number, order_status, order_log, customer_data, event_id, amount, amount_currency) 
 values ($1, $2, ( $3 )::jsonb, ( $4 )::jsonb, $5, $6, $7);`
+
+	orderLog = `update orders set order_log = order_log || ($1)::jsonb , order_status = $2 where order_number = $3;`
 
 	getAmountBySeats = `select sum(t.price)::numeric::int as amount, t.price_currency  from seats s, tariff t  
 where s.svg_id in (select unnest(string_to_array($1, ' ')) as dd)
 and s.tariff_id = t.tariff_id
 group by price_currency;`
+
+	getSeatTarif = `select tt.price::numeric::int as p, tt.tariff_name as t, s.svg_id as id from seats s, tariff tt where tt.tariff_id =s.tariff_id and tt.event_id = $1;`
+
+	getSeatsExpierReserv     = `select seat_id, svg_id from seats where state=1 and seat_id in ( select seat_id from reserv where create_time < ( now() - time '00:10') );`
+	clearExpiredReserves     = `delete from reserv where create_time < ( now() - time '00:10');`
+	clearStatusForUnreserved = `update seats set state = 0 where state=1 and seat_id not in ( select seat_id from reserv );`
+
+	getTicketsForSend = `select o.order_log#>'{0}'->>'log_time' dt, o.order_number, o.customer_data->>'name' as name,
+o.customer_data->>'email' as email, o.customer_data->>'phone' as pone,
+s.seat ->>'zone' as sector,  (s.seat ->>'row') as row, s.seat ->>'place' as seat
+from orders o, seats s CROSS JOIN UNNEST(regexp_split_to_array(o.customer_data->>'seats', ' ') ) as ss
+where o.order_status = '3' and s.svg_id = ss;`
+
+	getLastTicketNumber = `select ticket_number  from ticket where ticket_id = ( select min(ticket_id) from ticket t where state = 0 );`
+	updateTicketStatus  = `update ticket set state = 1 where ticket_number = $1;`
 )
 
 // database структура подключения к базе данных
@@ -57,39 +77,33 @@ type Database struct {
 	Conn *sqlx.DB
 }
 
+func init() {
+	//dd := db.NewDB('')
+	//go inBackground(dd)
+	//log.Println("#### Clear expired reserved Ticker start #####")
+	////select {}
+}
+
 // dbService представляет интерфейс взаимодействия с базой данных
 type DbService interface {
 	GetLastId(table string) (int, error)
-
 	GetSeats() ([]ent.Seat, error)
-
 	GetSeatStates() ([]ent.SeatState, error)
-
 	GetSeatsInfo() ([]ent.SeatInfo, error)
-
 	SetSeatStates() error
-
 	GetEventTarifs() ([]ent.Tafif, error)
-
+	CheckSeatStatess() (bool, error)
 	ReserveSeat() (bool, error)
 	UnReserveSeat() (bool, error)
-
 	CreateOrder() (string, int, error)
-
 	GetNewOrderNumber() (string, error)
-
 	CalculateOrderAmount() (int, error)
+	ClearExpiredReserves() ([]string, error)
 
-	//GetTreeNodeDiff(key string, env string,nextEnv string) ([]ent.RegistryItem, error)
-	//GetNodeChilds(key string, env string) ([]ent.RegistryItemDiff, error)
-	//GetRegistry(int, string) ([]*ent.RegistryItem, error)
-	//RegistryNodeCreate(int, string, string, int, string, string, string, ent.User) (int, error)
-	//RegistryNodeUpdate(int, int, int, string, string, int, string, string, string, ent.User) error
-	//RegistryNodeDel(int, string, ent.User) error
-	//GetRegistryNode(string, string) (ent.RegistryItem, error)
-	//GetDictionary(string, string) ([]*ent.DictionaryItem, error)
-	//GetAccessRules(string) ([]*ent.AuthorizationExpression, error)
+	OrderLog() (bool, error)
 
+	SendTickets() (bool, error)
+	GetLastTicketNumber() (string, error)
 }
 
 // newDB открывает соединение с базой данных
@@ -101,8 +115,6 @@ func NewDB(connectionString string) (Database, error) {
 
 // #################################################################
 func (db Database) GetSeats(event_id int, tarif string) ([]*ent.Seat, error) {
-
-	//db.Conn.Conn(nil);
 
 	seats := make([]*ent.Seat, 0)
 	//err := db.Conn.Select(&users, authQuery, login, password)
@@ -185,6 +197,31 @@ func (db Database) SetSeatStatess(seatIds string, state int) (bool, error) {
 	return true, err
 }
 
+func (db Database) CheckSeatStatess(seatIds string, expectState int) (bool, error) {
+
+	var state int
+
+	stmt, err := db.Conn.Prepare(checkSeaState)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(seatIds)
+	if err != nil {
+		log.Println("Error while updateng seat state: svg_id = %v", err)
+		return false, err
+	}
+	if rows.Next() {
+		err = rows.Scan(&state)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return state == expectState, err
+}
+
 func (db Database) GetSeatsInfo(seatIds string) ([]*ent.SeatInfo, error) {
 
 	sInfo := make([]*ent.SeatInfo, 0)
@@ -260,6 +297,7 @@ func (db Database) GetEventTarifs(evenId int) ([]*ent.Tafif, error) {
 
 func (db Database) ReserveSeat(svgId string) (bool, error) {
 	var seatId int
+	//var seat_state int
 
 	stmt, err := db.Conn.Prepare(checkSeatForReserve)
 	if err != nil {
@@ -291,6 +329,7 @@ func (db Database) ReserveSeat(svgId string) (bool, error) {
 }
 
 func (db Database) UnReserveSeat(svgId string) (bool, error) {
+
 	stmt, err := db.Conn.Prepare(unreserveSeatQuery)
 	if err != nil {
 		return false, err
@@ -298,6 +337,45 @@ func (db Database) UnReserveSeat(svgId string) (bool, error) {
 	defer stmt.Close()
 	_, err = stmt.Exec(svgId)
 	if err != nil {
+		return false, err
+	}
+	return true, err
+}
+
+func (db Database) OrderLog(act string, stage string, orderNum string, code string, message string, success string, reson string) (bool, error) {
+
+	pp := "{ \"stage\":\"" + stage + "\", \"code\":\"" + code + "\", \"message\":\"" + message + "\", \"success\":\"" + success + "\", \"reason\":\"" + reson + "\" }"
+	orderLogData := "[{\"log_time\":\"" + time.Now().Format("2006-01-02T15:04:05") + "\", \"action\":\"" + act + "\",\"actor\":\"user\",\"params\":" + pp + " }]"
+
+	//log.Printf("pp: %v, orderLogData: %v ", pp, orderLogData)
+
+	stmt, err := db.Conn.Prepare(orderLog)
+	if err != nil {
+		log.Println("Error while Log order:  = %v", err)
+		return false, err
+	}
+	defer stmt.Close()
+
+	var status int
+	if stage == "payFail" {
+		status = 1
+	}
+	if stage == "paySuccess" {
+		status = 3
+	}
+	if stage == "payComplete" {
+		status = 2
+	}
+	if stage == "ticketSendSucces" {
+		status = 4
+	}
+	if stage == "ticketSendNoSucces" {
+		status = 5
+	}
+
+	_, err = stmt.Exec(orderLogData, status, orderNum)
+	if err != nil {
+		log.Println("Error while Log order:  = %v", err)
 		return false, err
 	}
 	return true, err
@@ -318,7 +396,7 @@ func (db Database) CreateOrder(name string, email string, phone string, svgIds s
 		return "", 0, err
 	}
 
-	// insert into orders (order_number, order_staus, order_log, customer_data, event_id) values ($1, $2. $3, $4, $5);
+	// insert into orders (order_number, order_status, order_log, customer_data, event_id) values ($1, $2. $3, $4, $5);
 	stmt, err := db.Conn.Prepare(createNewOrder)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
@@ -327,7 +405,7 @@ func (db Database) CreateOrder(name string, email string, phone string, svgIds s
 	defer stmt.Close()
 
 	pp := name + "|" + email + "|" + name + "|" + phone + "|" + svgIds
-	orderLog := "{\"log_time\":\"" + time.Now().Format("2006-01-02T15:04:05") + "\", \"action\":\"orderCreat\",\"actor\":\"system\",\"params\":\"" + pp + "\"}"
+	orderLog := "[{\"log_time\":\"" + time.Now().Format("2006-01-02T15:04:05") + "\", \"action\":\"orderCreate\",\"actor\":\"system\",\"params\":\"" + pp + "\"}]"
 
 	cData := "{\"name\":\"" + name + "\", \"email\":\"" + email + "\", \"phone\":\"" + phone + "\",\"seats\":\"" + svgIds + "\" }"
 
@@ -413,230 +491,190 @@ func (db Database) GetNewOrderNumber(eventId int) (string, error) {
 		log.Println("err:", err.Error())
 		return "", err
 	}
-
 	orderNumber = part[0] + "_" + nn
 	return orderNumber, err
 }
 
-//func (db Database) CreateSessinDB(user ent.User) (string, error) {
-//	//tt := time.Now()
-//	sessId, err := HashSess(user.LOGIN + user.USER_TYPE + time.Now().String())
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	stmt, err := db.Conn.Prepare(createSession)
-//	if err != nil {
-//		return "", err
-//	}
-//	defer stmt.Close()
-//
-//	//dur,_ := time.ParseDuration("30m")
-//
-//	_, err = stmt.Exec(sessId, user.ID, 30)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	return sessId, nil
-//}
-//
-//func (db Database) CheckSessinDB(token string) (int, error) {
-//	stmt, err := db.Conn.Prepare(getSessionByID)
-//	if err != nil {
-//		return 0, err
-//	}
-//	defer stmt.Close()
-//
-//	rows, err := stmt.Query(token)
-//	if err != nil {
-//		return 0, err
-//	}
-//
-//	for rows.Next() {
-//		var sid string
-//		var userId int
-//		var expT time.Time
-//		err = rows.Scan(&sid, &userId, &expT)
-//		if err != nil {
-//			return 0, err
-//		}
-//
-//		if expT.Unix() < time.Now().Unix() {
-//			DeleteSess(db, sid)
-//			return 0, errors.New("Сесия протухла. ")
-//		}
-//
-//		return userId, nil
-//	}
-//	return 0, errors.New("Сесия не найдена. ")
-//}
-//
-//func DeleteSess(db Database, sessId string) error {
-//	stmt, err := db.Conn.Prepare(deleteSession)
-//	if err != nil {
-//		return err
-//	}
-//	defer stmt.Close()
-//
-//	_, err = stmt.Exec(sessId)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-//
-//func (db Database) DeleteSessinDB(sessId string) error {
-//	return DeleteSess(db, sessId)
-//}
-//
-//func (db Database) UpdateSessinDB(token string) error {
-//	stmt, err := db.Conn.Prepare(updateSession)
-//	if err != nil {
-//		return err
-//	}
-//	defer stmt.Close()
-//
-//	_, err = stmt.Exec(30, token)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-//
-//// ##################################################################
-//func (db Database) GetLastId(table string) (int, error) {
-//	var lastId int
-//	stmt, err := db.Conn.Prepare("SELECT max(id) as id FROM public." + table)
-//	if err != nil {
-//		return -1, err
-//	}
-//	defer stmt.Close()
-//
-//	rows, err := stmt.Query()
-//	for rows.Next() {
-//		err = rows.Scan(&lastId)
-//		if err != nil {
-//			return -1, err
-//		}
-//	}
-//
-//	return lastId, err
-//}
-//
-//// ############## Users ############################
-//func (db Database) GetUsers() ([]ent.User, error) {
-//	users := make([]ent.User, 0)
-//	stmt, err := db.Conn.Prepare(getUsersQuery)
-//	if err != nil {
-//		return users, err
-//	}
-//	defer stmt.Close()
-//
-//	rows, err := stmt.Query()
-//
-//	for rows.Next() {
-//		var (
-//			uid      int
-//			login    string
-//			pass     string
-//			active   string
-//			userType string
-//			lastV    time.Time
-//		)
-//		err = rows.Scan(&uid, &login, &pass, &active, &userType, &lastV)
-//		if err != nil {
-//			return users, err
-//		}
-//		u := ent.User{uid, login, pass, active, userType, lastV}
-//		users = append(users, u)
-//	}
-//
-//	return users, err
-//}
-//
-//func (db Database) GetUser(userId int) (ent.User, error) {
-//	var user ent.User
-//	stmt, err := db.Conn.Prepare(getUserByIdQuery)
-//	if err != nil {
-//		return user, err
-//	}
-//	defer stmt.Close()
-//
-//	rows, err := stmt.Query(userId)
-//
-//	for rows.Next() {
-//		var (
-//			uid      int
-//			login    string
-//			pass     string
-//			active   string
-//			userType string
-//			lastV    time.Time
-//		)
-//		err = rows.Scan(&uid, &login, &pass, &active, &userType, &lastV)
-//		if err != nil {
-//			return user, err
-//		}
-//		user = ent.User{uid, login, pass, active, userType, lastV}
-//		break
-//	}
-//
-//	return user, err
-//}
-//
-//func (db Database) UpdUser(id int, login string, pass string, userType string, actFlag string, lastV time.Time) (bool, error) {
-//
-//	var lastId int
-//
-//	execQuery := updUserQuery
-//
-//	lastId, err := db.GetLastId("users")
-//	if err != nil {
-//		return false, err
-//	}
-//
-//	if id > lastId {
-//		execQuery = addUserQuery
-//	}
-//
-//	stmt, err := db.Conn.Prepare(execQuery)
-//	if err != nil {
-//		return false, err
-//	}
-//
-//	_, err = stmt.Exec(login, pass, userType, actFlag, lastV, id)
-//	if err != nil {
-//		return false, err
-//	}
-//
-//	return true, err
-//}
-//
-//func (db Database) DelUser(id int) (bool, error) {
-//
-//	stmt, err := db.Conn.Prepare(delUserQuery)
-//	if err != nil {
-//		return false, err
-//	}
-//	defer stmt.Close()
-//
-//	_, err = stmt.Exec(id)
-//	if err != nil {
-//		return false, err
-//	}
-//
-//	return true, err
-//}
-//
-//// ############## Users ############################
-//
-//func HashSess(p string) (string, error) {
-//	h := sha256.New()
-//	_, err := h.Write([]byte(p))
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	return hex.EncodeToString(h.Sum(nil)), nil
-//}
+func (db Database) ClearExpiredReserves() ([]string, error) {
+	var stt []string
+
+	stmt, err := db.Conn.Prepare(getSeatsExpierReserv)
+	if err != nil {
+		log.Println("Error while clear expier reserves:  = %v", err)
+		return stt, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		log.Println("Error while clear expier reserves:  = %v", err)
+		return stt, err
+	}
+	for rows.Next() {
+		var (
+			svgId string
+			sId   int
+		)
+		err = rows.Scan(&sId, &svgId)
+		if err != nil {
+			log.Println("Error scan Data:  = %v", err)
+			return stt, err
+		}
+		//st := ent.SeatState{sId, svgId, 0}
+		stt = append(stt, svgId)
+	}
+
+	stmt, err = db.Conn.Prepare(clearExpiredReserves)
+	if err != nil {
+		log.Println("Error while clear expier reserves:  = %v", err)
+		return nil, err
+	}
+
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Println("Error while clear expier reserves:  = %v", err)
+		return nil, err
+	}
+
+	stmt, err = db.Conn.Prepare(clearStatusForUnreserved)
+	if err != nil {
+		log.Println("Error while clear status for unresed seats:  = %v", err)
+		return nil, err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Println("Error while clear status for unresed seats:  = %v", err)
+		return nil, err
+	}
+
+	return stt, nil
+}
+
+func (db Database) GetSeatTarif(event_id int) ([]*ent.SeatTarif, error) {
+	st := make([]*ent.SeatTarif, 0)
+	stmt, err := db.Conn.Prepare(getSeatTarif)
+	if err != nil {
+		log.Println("Error while get tarifs:  = %v", err)
+		return st, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(event_id)
+	if err != nil {
+		log.Println("Error while get tarifs:  = %v", err)
+		return st, err
+	}
+	for rows.Next() {
+		var (
+			tPice int
+			tName string
+			sId   string
+		)
+		err = rows.Scan(&tPice, &tName, &sId)
+		if err != nil {
+			log.Println("Error while get tarifs:  = %v", err)
+			return st, err
+		}
+		stt := ent.SeatTarif{tPice, tName, sId}
+		st = append(st, &stt)
+	}
+
+	return st, nil
+}
+
+func (db Database) SendTickets() (bool, error) {
+	stt := make([]*ent.TicketForSend, 0)
+	stmt, err := db.Conn.Prepare(getTicketsForSend)
+	if err != nil {
+		log.Println("Error while get tikets fo send:  = %v", err)
+		return false, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		log.Println("Error while get tikets fo send:  = %v", err)
+		return false, err
+	}
+	for rows.Next() {
+		var (
+			oDate string
+			oNumb string
+			name  string
+			email string
+			phone string
+			sect  string
+			row   string
+			seat  string
+		)
+		err = rows.Scan(&oDate, &oNumb, &name, &email, &phone, &sect, &row, &seat)
+		if err != nil {
+			log.Println("Error while get tikets fo send:  = %v", err)
+			return false, err
+		}
+		//		getTicketsForSend = `select o.order_log#>'{0}'->>'log_time' dt, o.order_number, o.customer_data->>'name' as name,
+		//o.customer_data->>'email' as email, o.customer_data->>'phone' as phone, s.seat ->>'zone' as sector,  s.seat ->>'row' as row, s.seat ->>'place' as seat
+		//from orders o, seats s CROSS JOIN UNNEST(regexp_split_to_array(o.customer_data->>'seats', ' ') ) as ss where o.order_status = '3' and s.svg_id = ss;
+
+		tNumb, err := db.GetLastTicketNumber()
+		if err != nil {
+			fmt.Println(err)
+			return false, err
+		}
+
+		st := ent.TicketForSend{oDate, oNumb, tNumb, name, email, phone, sect, row, seat}
+		stt = append(stt, &st)
+	}
+
+	sts, err := esend.SendTickets(stt)
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+	for _, sst := range sts {
+		//Log  Order
+		var stage string
+		if sst.STATUS == "OK" {
+			stage = "ticketSendSucces"
+		} else {
+			stage = "ticketSendNoSucces"
+		}
+		db.OrderLog("ticketSend", stage, sst.ORDER_NUMBER, "0", "Билет успешно отправлен: "+sst.TICKET_NUMBER, "true", "")
+		//
+
+	}
+
+	return true, nil
+}
+
+func (db Database) GetLastTicketNumber() (string, error) {
+	tNumber := ""
+	stmt, err := db.Conn.Prepare(getLastTicketNumber)
+	if err != nil {
+		log.Println("Error while get tikets number:  = %v", err)
+		return tNumber, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		log.Println("Error while get tikets number:  = %v", err)
+		return tNumber, err
+	}
+	for rows.Next() {
+		err = rows.Scan(&tNumber)
+		if err != nil {
+			log.Println("Error while get tikets number:  = %v", err)
+			return tNumber, err
+		}
+		stmt, err = db.Conn.Prepare(updateTicketStatus)
+		if err != nil {
+			log.Println("Error while update tikets status:  = %v", err)
+			return tNumber, err
+		}
+		_, err := stmt.Exec(tNumber)
+		if err != nil {
+			log.Println("Error while get tikets number:  = %v", err)
+			return tNumber, err
+		}
+
+	}
+
+	return tNumber, nil
+}

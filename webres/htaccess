@@ -3,8 +3,5 @@ ErrorDocument 404 /404.html
 
 RewriteEngine On
 
-RewriteRule ^indexhtml$ page31981275.html [NC]
-RewriteRule ^indexhtml/$ page31981275.html [NC]
-
 RewriteRule ^favicon.ico$ https://static.tildacdn.com/img/tildafavicon.ico [R=302,L]
 

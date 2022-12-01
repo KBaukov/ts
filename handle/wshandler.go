@@ -2,6 +2,7 @@ package handle
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/KBaukov/ts/config"
 	"github.com/KBaukov/ts/db"
 	"github.com/KBaukov/ts/ent"
@@ -29,9 +30,29 @@ func init() {
 	brPref = WsConfig.BrPref
 	wsAllowedOrigin = WsConfig.WsAllowedOrigin
 
-	log.Println("Config values: ", cfg)
+	//log.Println("Config values: ", cfg)
 
 	go hub.run()
+	log.Println("Config values: ", cfg)
+
+	psqlconn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		cfg.DbConnection.DBHost,
+		cfg.DbConnection.DBPort,
+		cfg.DbConnection.DBUser,
+		cfg.DbConnection.DBPass,
+		cfg.DbConnection.DBName,
+	)
+
+	dd, _ := db.NewDB(psqlconn)
+
+	go inBackground(dd)
+	log.Println("#### Clear expired reserved Ticker start #####")
+
+	go CheckTicketsForSend(dd)
+	log.Println("#### Clear expired reserved Ticker start #####")
+	//select {}
+
 }
 
 var (
@@ -188,35 +209,53 @@ func (c *Conn) readPump(db db.Database) {
 			if strings.Contains(msg, "\"action\":\"reserve\"") {
 				var rMsg ent.ReservSeatMsg
 				var ansver string
+				var st string
 
 				err = json.Unmarshal([]byte(msg), &rMsg)
 				if err != nil {
 					log.Println("Error data unmarshaling: ", err)
 				}
 
-				//log.Println("msg: " + msg + " from:" + devId)
-
-				isSuccess, err := db.SetSeatStatess(rMsg.SEAT_ID, 1)
+				isVacant, err := db.CheckSeatStatess(rMsg.SEAT_ID, 0)
 				if err != nil {
 					log.Println("Error while reserved seat: ", err)
 				}
-				if isSuccess {
-					isSuccess, err = db.ReserveSeat(rMsg.SEAT_ID)
+				if isVacant {
+
+					isSuccess, err := db.SetSeatStatess(rMsg.SEAT_ID, 1)
 					if err != nil {
 						log.Println("Error while reserved seat: ", err)
 					}
 					if isSuccess {
-						ansver = "true"
+						isSuccess, err = db.ReserveSeat(rMsg.SEAT_ID)
+						if err != nil {
+							log.Println("Error while reserved seat: ", err)
+						}
+						if isSuccess {
+							ansver = "true"
+							st = "1"
+						} else {
+							ansver = "false"
+							st = "0"
+						}
+
 					} else {
 						ansver = "false"
+						st = "0"
 					}
 
 				} else {
 					ansver = "false"
 				}
-				if !sendMsg(c, "{\"action\":\"reserve\",\"success\":"+ansver+"}") {
+				if !sendMsg(c, "{\"action\":\"reserve\",\"success\":"+ansver+", \"seat\":\""+rMsg.SEAT_ID+"\"}") {
 					break
+				} else {
+					if st == "1" {
+						hub.sendDataToWeb("{\"action\":\"sysreserve\",\"seat\":\""+rMsg.SEAT_ID+"\", \"state\": "+st+"}", "TS_system", c)
+					}
+
 				}
+
 			}
 
 			if strings.Contains(msg, "\"action\":\"unreserve\"") {
@@ -233,7 +272,7 @@ func (c *Conn) readPump(db db.Database) {
 					log.Println("Error while unreserved seat: ", err)
 				}
 				if isSuccess {
-					isSuccess, err = db.ReserveSeat(rMsg.SEAT_ID)
+					isSuccess, err = db.UnReserveSeat(rMsg.SEAT_ID)
 					if err != nil {
 						log.Println("Error while unreserved seat: ", err)
 					}
@@ -249,6 +288,8 @@ func (c *Conn) readPump(db db.Database) {
 				if !sendMsg(c, "{\"action\":\"unreserve\",\"success\":"+ansver+"}") {
 					break
 				}
+
+				hub.sendDataToWeb("{\"action\":\"sysreserve\",\"seat\":\""+rMsg.SEAT_ID+"\", \"state\": 0}", "TS_system", c)
 			}
 
 		} else {
@@ -323,6 +364,10 @@ func sendMsg(c *Conn, m string) bool {
 
 }
 
+//func broadCastSend(msg string) bool {
+//	hub.
+//}
+
 func unAssign(devId string) {
 	for key, val := range WsAsignConns {
 		if val == devId {
@@ -332,5 +377,45 @@ func unAssign(devId string) {
 			}
 			delete(WsAsignConns, key)
 		}
+	}
+}
+
+func inBackground(db db.Database) {
+	ticker := time.NewTicker(30 * time.Second) //time.Minute)
+	for now := range ticker.C {
+		stt, err := db.ClearExpiredReserves()
+		if err != nil {
+			log.Println("Error while clear status for unresed seats:  = %v : time: %v", err, now)
+		}
+		var n = len(stt)
+		if n > 0 {
+			var tt string
+			for _, ss := range stt {
+				tt += ",{\"seat\":\"" + ss + "\", \"state\": 0 }"
+			}
+			tt = tt[1:len(tt)]
+			hub.sendDataToWeb("{\"action\":\"sysunreserves\",\"seats\":[ "+tt+" ]}", "TS_system", nil)
+		}
+		log.Printf("#### %v Clear expired reserved success #####", n)
+	}
+}
+
+func CheckTicketsForSend(db db.Database) {
+	ticker := time.NewTicker(time.Minute) //time.Minute)
+	for now := range ticker.C {
+		_, err := db.SendTickets()
+		if err != nil {
+			log.Println("Error while send tickets:  = %v : time: %v", err, now)
+		}
+		//var n = len(stt)
+		//if n > 0 {
+		//	var tt string
+		//	for _, ss := range stt {
+		//		tt += ",{\"seat\":\"" + ss + "\", \"state\": 0 }"
+		//	}
+		//	tt = tt[1:len(tt)]
+		//	hub.sendDataToWeb("{\"action\":\"sysunreserves\",\"seats\":[ "+tt+" ]}", "TS_system", nil)
+		//}
+		//log.Printf("#### %v Clear expired reserved success #####", n)
 	}
 }

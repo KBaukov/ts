@@ -64,6 +64,24 @@ type Order struct {
 	ORDER_CURR    string      `json:"currency"`
 }
 
+type TicketForSend struct {
+	ORDER_DATE    string `json:"order_date"`
+	ORDER_NUMBER  string `json:"order_number"`
+	TICKET_NUMBER string `json:"ticket_number"`
+	NAME          string `json:"name"`
+	EMAIL         string `json:"email"`
+	PHONE         string `json:"phone"`
+	SECTOR        string `json:"sector"`
+	ROW           string `json:"row"`
+	SEAT          string `json:"seat"`
+}
+
+type SendTicketStatus struct {
+	ORDER_NUMBER  string `json:"order_number"`
+	TICKET_NUMBER string `json:"ticket_number"`
+	STATUS        string `json:"status"`
+}
+
 type Reserv struct {
 	RESERV_ID   int       `json:"reserv_id"`
 	CREATE_TIME time.Time `json:"create_time"`
@@ -72,6 +90,12 @@ type Reserv struct {
 
 type ReservSeatMsg struct {
 	ACTION  string `json:"action"`
+	SEAT_ID string `json:"seat_id"`
+}
+
+type SeatTarif struct {
+	T_PRICE int    `json:"t_price"`
+	T_NAME  string `json:"t_name"`
 	SEAT_ID string `json:"seat_id"`
 }
 

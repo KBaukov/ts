@@ -9,13 +9,13 @@
   "LoggerPath": "",
   "Server": {
     "Address": "0.0.0.0",
-    "Port": "8081",
+    "Port": "8443",
     "TLS": false,
-    "CertificatePath": "./ssl/server.crt",
-    "KeyPath": "./ssl/server.key"
+    "CertificatePath": "./ssl/f2050.crt",
+    "KeyPath": "./ssl/f2050.key"
   },
   "WsConfig":{
-    "WsAllowedOrigin": "http://localhost:8081",
+    "WsAllowedOrigin": "http://localhost:8443",
     "BrPref":  "WBR_",
     "WriteWait": 10,
     "MaxMessageSize": 1024,
@@ -28,5 +28,12 @@
     "WebResFolder": "webres",
     "MainTemplate": "./webres/html/main.html",
     "LoginTemplate": "./webres/html/login.html"
+  },
+  "PaySecrets": {
+    "PKey": "test_api_00000000000000000000002",
+    "AutoClose": 5,
+    "Template": "mini",
+    "Curr": "RUB",
+    "Description": "Fortune 2050: Оплата билетов"
   }
 }
