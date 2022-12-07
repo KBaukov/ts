@@ -38,7 +38,15 @@ type sessData struct {
 	user     ent.User
 }
 
+var (
+	TaxSyst         int
+	WsAllowedOrigin string
+)
+
 func init() {
+	cfg := config.LoadConfig("config.json")
+	TaxSyst = cfg.OfdData.TaxSyst
+	WsAllowedOrigin = cfg.WsConfig.WsAllowedOrigin
 
 }
 
@@ -81,6 +89,9 @@ func ServePagesRes(w http.ResponseWriter, r *http.Request) {
 	if path == "/oferta" {
 		ff = "/pages/oferta.html"
 	}
+	if path == "/crocuszal" {
+		ff = "/pages/ts.html"
+	}
 
 	http.ServeFile(w, r, "./"+webres+ff)
 	//}
@@ -90,7 +101,10 @@ func ServePagesRes(w http.ResponseWriter, r *http.Request) {
 func ServeApi(db db.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		log.Printf("incoming request in: %v", r.URL.Path)
+		referrer := r.Header.Get("Referrer")
+
+		log.Printf("incoming request in: %v - ref: %v", r.URL.Path, referrer)
+
 		//token := r.Header.Get("X-TOKEN")
 
 		if r.URL.Path == "/api/seatmap" {
@@ -148,7 +162,7 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			return
 		}
 
-		if r.URL.Path == "/api/payaction" && r.Method == "POST" {
+		if r.URL.Path == "/api/order/log" && r.Method == "POST" {
 
 			seatIds := r.FormValue("seat_ids")
 			orderNum := r.FormValue("order_number")
@@ -161,8 +175,12 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			log.Printf("Incomming change {stage: %v, seatIds: %v, orderNum: %v, code: %v, message: %v, success: %v, reson: %v}",
 				stage, seatIds, orderNum, code, message, success, reson)
 
-			if stage == "payComplete" {
+			if stage == "paySuccess" {
 				_, err := db.SetSeatStatess(seatIds, 2)
+				if err != nil {
+					http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+					log.Printf("Ошибка смены статуса места (seatIds: %v ): %v", seatIds, err)
+				}
 				if err != nil {
 					http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 					log.Printf("Ошибка смены статуса места (seatIds: %v ): %v", seatIds, err)
@@ -170,6 +188,7 @@ func ServeApi(db db.Database) http.HandlerFunc {
 					msg := actionSeatUpdate(seatIds)
 					hub.sendDataToWeb(msg, "TS_system", nil)
 				}
+
 			}
 
 			// Логирование в заказ
@@ -234,7 +253,7 @@ func ServeApi(db db.Database) http.HandlerFunc {
 				log.Println("err:", err.Error())
 			}
 
-			orderNumber, amount, err := db.CreateOrder(name, email, phone, seatIds, eventId)
+			orderNumber, amount, items, err := db.CreateOrder(name, email, phone, seatIds, eventId)
 			if err != nil {
 				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 				log.Printf("Ошибка создания заказа (seatIds: %v ): %v", seatIds, err)
@@ -243,7 +262,56 @@ func ServeApi(db db.Database) http.HandlerFunc {
 				//hub.sendDataToWeb(msg, "TS_system")
 			}
 
-			ext := ent.PayDataExt{name, email, phone, seatIds}
+			//Заполняем  фискальную инфу
+			rAmounts := ent.PeceiptAmounts{amount, float32(0), float32(0), float32(0)}
+
+			receipt := ent.Receipt{items, "tickets.fortune2050.com", TaxSyst,
+				email, phone, name, "", false, nil, rAmounts}
+
+			customerReceipt := ent.CustomerReceipt{receipt}
+
+			ext := ent.PayDataExt{customerReceipt}
+
+			pData := ent.PayData{cfg.PaySecrets.PKey, cfg.PaySecrets.Description, amount,
+				cfg.PaySecrets.Curr, email, orderNumber, email,
+				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext}
+
+			apiDataResponse(w, pData, nil)
+			return
+		}
+
+		if r.URL.Path == "/api/order" && r.Method == "GET" {
+
+			orderNumber := r.FormValue("order_number")
+			seatIds := r.FormValue("seats")
+			name := r.FormValue("name")
+			email := r.FormValue("email")
+			phone := r.FormValue("phone")
+			e := r.FormValue("event_id")
+			eventId, err := strconv.Atoi(e)
+			if err != nil {
+				log.Println("err:", err.Error())
+			}
+
+			orderNumber, amount, items, err := db.UpdateOrder(orderNumber, name, email, phone, seatIds, eventId)
+			if err != nil {
+				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+				log.Printf("Ошибка создания заказа (seatIds: %v ): %v", seatIds, err)
+			} else {
+				//msg := actionSeatUpdate(seatIds)
+				//hub.sendDataToWeb(msg, "TS_system")
+			}
+
+			//Заполняем  фискальную инфу
+			rAmounts := ent.PeceiptAmounts{amount, float32(0), float32(0), float32(0)}
+
+			receipt := ent.Receipt{items, "tickets.fortune2050.com", TaxSyst,
+				email, phone, name, "", false, nil, rAmounts}
+
+			customerReceipt := ent.CustomerReceipt{receipt}
+
+			ext := ent.PayDataExt{customerReceipt}
+
 			pData := ent.PayData{cfg.PaySecrets.PKey, cfg.PaySecrets.Description, amount,
 				cfg.PaySecrets.Curr, email, orderNumber, email,
 				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext}
@@ -260,6 +328,22 @@ func ServeApi(db db.Database) http.HandlerFunc {
 				log.Println("err:", err.Error())
 			}
 			tariffs, err := db.GetSeatTarif(eventId)
+			if err != nil {
+				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+				log.Printf("Ошибка запроса информации о тарифах (eventId: %v ): %v", eventId, err)
+			}
+			apiDataResponse(w, tariffs, err)
+			return
+		}
+
+		if r.URL.Path == "/api/zonetarifs" && r.Method == "GET" {
+
+			eId := r.FormValue("event_id")
+			eventId, err := strconv.Atoi(eId)
+			if err != nil {
+				log.Println("err:", err.Error())
+			}
+			tariffs, err := db.GetMaxMinZoneTarifs()
 			if err != nil {
 				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 				log.Printf("Ошибка запроса информации о тарифах (eventId: %v ): %v", eventId, err)
@@ -296,6 +380,9 @@ func apiDataResponse(w http.ResponseWriter, data interface{}, err error) {
 	if err != nil {
 		log.Printf("Ошибка записи результата запроса: %v", err)
 	}
+
+	w.Header().Add("Content-Security-Policy", "default-src 'self'; img-src 'self' https://widget.cloudpayments.ru; object-src 'self'; script-src 'self' https://widget.cloudpayments.ru; style-src 'self' https://widget.cloudpayments.ru; frame-ancestors 'self' https://widget.cloudpayments.ru; base-uri 'self' https://widget.cloudpayments.ru; form-action 'self' https://widget.cloudpayments.ru;")
+	w.Header().Add("Access-Control-Allow-Origin", WsAllowedOrigin)
 }
 
 // ########################## helpers ############################

@@ -2,6 +2,7 @@ package esend
 
 import (
 	"fmt"
+	"github.com/KBaukov/ts/config"
 	"github.com/KBaukov/ts/ent"
 	"log"
 	"net/http"
@@ -9,12 +10,13 @@ import (
 )
 
 var (
-	apiUrl   = "http://localhost:9010"
+	apiUrl   string
 	resource = "/"
 )
 
 func init() {
-
+	cfg := config.LoadConfig("config.json")
+	apiUrl = cfg.TsHost.Proto + cfg.TsHost.Host + ":" + cfg.TsHost.Port
 }
 
 type errData struct {
@@ -50,26 +52,29 @@ func SendTickets(data []*ent.TicketForSend) ([]*ent.SendTicketStatus, error) {
 		r, err := http.NewRequest("GET", urlStr, nil)
 		if err != nil {
 			log.Printf("Http request error: %v", r)
-			return nil, err
+			//return nil, err
 		}
 		r.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(r)
-		//fmt.Println(resp.Status)
 		if err != nil {
 			log.Printf("Http request error: %v", resp)
-			return nil, err
+			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "NoSend", "Ошибка соединения с ностом:" + r.URL.Host}
+			sts = append(sts, &ts)
+			//resp.Body.Close()
+			continue
+		} else {
+			defer resp.Body.Close()
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode == 200 {
 			log.Printf("%v Ticket success Sended %v: ticketNumber: ", i, tData.TICKET_NUMBER)
-			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "OK"}
+			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "OK", resp.Status}
 			sts = append(sts, &ts)
 			//db.OrderLog("ticketSend", "ticketSendSucces", tData.ORDER_NUMBER, "0", "Билет успешно отправлен: "+ticketNumber, "true", "")
 		} else {
 			log.Printf("%v Ticket Not Sended %v: ticketNumber: ", i, tData.TICKET_NUMBER)
-			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "OK"}
+			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "NoSend", resp.Status}
 			sts = append(sts, &ts)
 			//db.OrderLog("ticketSend", "ticketSendNoSucces", tData.ORDER_NUMBER, "-1", "Билет не отправлен: "+ticketNumber, "false", resp.Status)
 		}

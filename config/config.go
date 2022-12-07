@@ -44,6 +44,17 @@ type Configuration struct {
 		Curr        string
 		Description string
 	}
+	TsHost struct {
+		Host  string
+		Port  string
+		Proto string
+	}
+	OfdData struct {
+		Vat        int
+		OfdMathod  int
+		OfdOobject int
+		TaxSyst    int
+	}
 }
 
 // loadConfig читает и парсит настройки сервиса

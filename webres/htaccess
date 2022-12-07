@@ -3,5 +3,32 @@ ErrorDocument 404 /404.html
 
 RewriteEngine On
 
-RewriteRule ^favicon.ico$ https://static.tildacdn.com/img/tildafavicon.ico [R=302,L]
+RewriteCond %{REQUEST_FILENAME} /robots.txt
+RewriteCond "%{DOCUMENT_ROOT}/robots_%{HTTP_HOST}.txt" -f
+RewriteRule ^(.*)$ robots_%{HTTP_HOST}.txt [NC,L]
+RewriteRule ^paysuccess$ page32211402.html [NC]
+RewriteRule ^paysuccess/$ page32211402.html [NC]
+
+RewriteRule ^policy$ page32211406.html [NC]
+RewriteRule ^policy/$ page32211406.html [NC]
+
+RewriteRule ^crocusrules$ page32211409.html [NC]
+RewriteRule ^crocusrules/$ page32211409.html [NC]
+
+RewriteRule ^commonrules$ page32211412.html [NC]
+RewriteRule ^commonrules/$ page32211412.html [NC]
+
+RewriteRule ^oferta$ page32211414.html [NC]
+RewriteRule ^oferta/$ page32211414.html [NC]
+
+RewriteRule ^soon$ page32263772.html [NC]
+RewriteRule ^soon/$ page32263772.html [NC]
+
+RewriteRule ^customerdata$ page32267846.html [NC]
+RewriteRule ^customerdata/$ page32267846.html [NC]
+
+RewriteRule ^tickets$ page32304407.html [NC]
+RewriteRule ^tickets/$ page32304407.html [NC]
+
+RewriteRule ^favicon.ico$ https://static.tildacdn.com/tild3638-3939-4666-a431-663262626662/favicon.ico [R=302,L]
 

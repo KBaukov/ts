@@ -44,6 +44,13 @@ type SeatState struct {
 	STATE   int    `json:"state"`
 }
 
+type MaxMinTafif struct {
+	Z_NUMBER int    `json:"zone_num"`
+	Z_NAME   string `json:"zone_name"`
+	MAX      int    `json:"max"`
+	MIN      int    `json:"min"`
+}
+
 type Tafif struct {
 	TARIF_ID       int    `json:"tarif_id"`
 	EVENT_ID       int    `json:"event_id"`
@@ -80,6 +87,7 @@ type SendTicketStatus struct {
 	ORDER_NUMBER  string `json:"order_number"`
 	TICKET_NUMBER string `json:"ticket_number"`
 	STATUS        string `json:"status"`
+	REASON        string `json:"reason"`
 }
 
 type Reserv struct {
@@ -113,7 +121,7 @@ type ApiResp struct {
 type PayData struct {
 	PUBLIC_ID   string      `json:"publicId"`
 	DESCRIPTION string      `json:"description"`
-	AMOUNT      int         `json:"amount"`
+	AMOUNT      float32     `json:"amount"`
 	CURR        string      `json:"currency"`
 	ACCOUNT_ID  string      `json:"accountId"`
 	INVOCE_ID   string      `json:"invoiceId"`
@@ -123,11 +131,45 @@ type PayData struct {
 	DATA        interface{} `json:"data"`
 }
 
+// { "Items": [{"label": "Fortune2050: Билет: VIP-Parter ","price": 50000.00,"quantity": 2.00,"amount": 100000.00,"vat": 0,"method": 0,"object": 0,"measurementUnit": "шт" } ],
+// "calculationPlace": "fortune2050.com","taxationSystem": 0,"email": "kbaukov@gmail.com","phone": "+79161075947","customerInfo": "Бауков Кирилл","customerInn": "","isBso": false,"AgentSign": null,"amounts":{"electronic": 100000.00,"advancePayment": 0.00,"credit": 0.00,"provision": 0.00 } }
 type PayDataExt struct {
-	NAME  string `json:"name"`
-	EMAIL string `json:"email"`
-	PHONE string `json:"phone"`
-	SEATS string `json:"seats"`
+	PAY_SYSTEM CustomerReceipt `json:"CloudPayments"`
+}
+
+type CustomerReceipt struct {
+	CUST_RECEIPT Receipt `json:"CustomerReceipt"`
+}
+
+type Receipt struct {
+	ITEMS      []*Item        `json:"Items"`
+	CALC_PLACE string         `json:"calculationPlace"`
+	TAX_SYST   int            `json:"taxationSystem"`
+	EMAIL      string         `json:"email"`
+	PHONE      string         `json:"phone"`
+	CUST_INFO  string         `json:"customerInfo"`
+	CUST_INN   string         `json:"customerInn"`
+	IS_BSO     bool           `json:"isBso"`
+	AGENT_SIGN interface{}    `json:"AgentSign"`
+	AMOUNTS    PeceiptAmounts `json:"amounts"`
+}
+
+type PeceiptAmounts struct {
+	ELECTRONIC float32 `json:"electronic"`
+	ADVANC_PAY float32 `json:"advancePayment"`
+	CREDIT     float32 `json:"credit"`
+	PROVISION  float32 `json:"provision"`
+}
+
+type Item struct {
+	LABEL  string  `json:"label"`
+	PRICE  float32 `json:"price"`
+	QUANT  float32 `json:"quantity"`
+	AMOUNT float32 `json:"amount"`
+	VAT    int     `json:"vat"`
+	METHOD int     `json:"method"`
+	OBJECT int     `json:"object"`
+	UNIT   string  `json:"measurementUnit"`
 }
 
 type ActionLog struct {

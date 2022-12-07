@@ -10,12 +10,12 @@
   "Server": {
     "Address": "0.0.0.0",
     "Port": "8443",
-    "TLS": false,
+    "TLS": true,
     "CertificatePath": "./ssl/f2050.crt",
     "KeyPath": "./ssl/f2050.key"
   },
   "WsConfig":{
-    "WsAllowedOrigin": "http://localhost:8443",
+    "WsAllowedOrigin": "https://localhost:8443",
     "BrPref":  "WBR_",
     "WriteWait": 10,
     "MaxMessageSize": 1024,
@@ -35,5 +35,16 @@
     "Template": "mini",
     "Curr": "RUB",
     "Description": "Fortune 2050: Оплата билетов"
+  },
+  "TsHost": {
+    "Host": "217.18.63.204",
+    "Port":  "9010",
+    "Proto": "http://"
+  },
+  "OfdData": {
+    "Vat": 0,
+    "OfdMathod":  0,
+    "OfdOobject": 0,
+    "TaxSyst": 0
   }
 }

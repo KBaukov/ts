@@ -68,6 +68,8 @@ func main() {
 	http.HandleFunc("/css/", handle.ServeWebRes)
 	http.HandleFunc("/js/", handle.ServeWebRes)
 	http.HandleFunc("/images/", handle.ServeWebRes)
+	http.HandleFunc("/fonts/", handle.ServeWebRes)
+	http.HandleFunc("/crocuszal", handle.ServePagesRes)
 	http.HandleFunc("/paysuccess", handle.ServePagesRes)
 	http.HandleFunc("/crocusrules", handle.ServePagesRes)
 	http.HandleFunc("/confidential", handle.ServePagesRes)

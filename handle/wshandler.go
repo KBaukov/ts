@@ -78,7 +78,13 @@ var upgrader = websocket.Upgrader{
 		//}
 		deviceOrigin := r.Header.Get("Origin")
 		token := r.Header.Get("Sec-WebSocket-Protocol")
-		if wsAllowedOrigin == deviceOrigin || token == user.PASS[10:16] {
+
+		tt, err := f(user.PASS, 10, 16)
+		if err != nil {
+			log.Println("########## !!!!!!!!!!!!! ####################:")
+		}
+
+		if wsAllowedOrigin == deviceOrigin || token == tt {
 			return true
 		} else {
 			log.Println("Origin not allowed:", deviceOrigin)
@@ -393,7 +399,10 @@ func inBackground(db db.Database) {
 			for _, ss := range stt {
 				tt += ",{\"seat\":\"" + ss + "\", \"state\": 0 }"
 			}
-			tt = tt[1:len(tt)]
+			tt, err = f(tt, 1, len(tt)) //[1:len(tt)]
+			if err != nil {
+				log.Println("########## !!!!!!!!!!!!! ####################:")
+			}
 			hub.sendDataToWeb("{\"action\":\"sysunreserves\",\"seats\":[ "+tt+" ]}", "TS_system", nil)
 		}
 		log.Printf("#### %v Clear expired reserved success #####", n)
@@ -407,15 +416,16 @@ func CheckTicketsForSend(db db.Database) {
 		if err != nil {
 			log.Println("Error while send tickets:  = %v : time: %v", err, now)
 		}
-		//var n = len(stt)
-		//if n > 0 {
-		//	var tt string
-		//	for _, ss := range stt {
-		//		tt += ",{\"seat\":\"" + ss + "\", \"state\": 0 }"
-		//	}
-		//	tt = tt[1:len(tt)]
-		//	hub.sendDataToWeb("{\"action\":\"sysunreserves\",\"seats\":[ "+tt+" ]}", "TS_system", nil)
-		//}
-		//log.Printf("#### %v Clear expired reserved success #####", n)
 	}
+}
+
+func f(tt string, begin int, end int) (string, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Catch Panic in ", r)
+		}
+	}()
+	ss := tt[begin:end]
+
+	return ss, nil
 }

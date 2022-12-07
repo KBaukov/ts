@@ -1,0 +1,519 @@
+@font-face {
+  font-family: "Manrope";
+  src: url("../fonts/Manrope-Regular.ttf") format("truetype");
+}
+
+.ts-body {
+	background-color: #000000;
+	margin: 0;
+	padding: 0;	
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	line-height: 152%;
+	
+}
+
+.ts-fon {
+	width:100%; height:100%; 
+	background-repeat: no-repeat;
+	position:fixed;
+	top:0; left: 0;
+}	
+.ts-fon-left {
+	background-image: url("../images/Vector10.png");
+	background-color: transparent;
+	
+}
+.ts-fon-right {
+	background-image: url("../images/Vector13.png");
+	background-color: transparent;
+	background-position: top right;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow-y: scroll;
+}
+.ts-cColumn { 
+	height:100%; width:90%; max-width:1500px;
+	margin: 0px auto;
+	text-align: center;
+	
+}
+
+.ts-podv {	 
+	/*width: 100%; max-width:1500px;  
+	border-top: 1px solid #565656;
+	padding-top:35px;
+	padding-bottom:20px;
+	position:static;*/
+	
+	width: 100%;
+	
+	display: grid;
+    grid-gap: 5px;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    grid-template-rows: 100px; 
+	
+	/*display: grid;
+    grid-template-columns: 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px ;
+    grid-template-rows: 100px ;  */
+	
+	padding-top: 56px;
+	border-top: 1px solid #565656;
+	
+	color: #CACACA;
+	
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.9em;
+	line-height: 152%;
+}
+.pod1 {
+	grid-column-start: 1;
+    grid-column-end: 7;
+	padding-top: 10px;
+	text-align: left;
+}
+.pod2 {
+	grid-column-start: 7;
+    grid-column-end: 8;
+}
+.pod3 {
+	grid-column-start: 8;
+    grid-column-end: 12;
+	padding-top: 10px;
+	text-align: left;
+}
+.pod4 {
+	grid-column-start: 12;
+    grid-column-end: 13;
+}
+.pod5 {
+	grid-column-start: 13;
+    grid-column-end: 15;
+	padding-top: 10px;
+	text-align: right;
+}
+.pod6 {
+	grid-column-start: 15;
+    grid-column-end: 16;
+}
+.pod7 {
+	grid-column-start: 16;
+    grid-column-end: 20;
+	padding-top: 10px;
+	text-align: left;
+}
+
+div.tmp {
+	color:#CACACA;
+}
+
+@media screen and (max-width: 800px) {
+  .left, .main, .right {
+    width: 100%; /* Ширина составляет 100%, когда видовой экран составляет 800 пикселей или меньше */
+  }
+}
+
+
+
+.ts-podv-box-left {
+	height: inherit;
+	float: left;
+    vertical-align: middle;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 18px;
+	line-height: 152%;
+	/* or 27px */
+	color: #CACACA;
+	width: 25%;
+}
+.ts-podv-box-right {
+	height: inherit;
+	float: right;
+    vertical-align: middle;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 152%;
+	/* or 27px */
+	color: #CACACA;
+	text-align: left;
+	width: 25%;
+}
+div.map { 
+	width:100%; height:100%;	
+}
+
+div.infoBox { 
+	position: absolute;
+}
+
+div#infoBox { 
+	top:200px; right: 60px;
+	width: 240px;
+}
+div#infoBoxSeat { 
+	
+	top:200px; right: 350px;
+	width: 220px; 
+}
+
+div#buyButton {
+	position: absolute;
+	top:300px; right: 60px;
+	width: 240px; height:44px;
+}
+
+div#zalContainer {text-align: center; }
+div#tForPay { 
+	padding:20px;
+	//overflow-x: scroll;
+}
+
+div.buttWrap {
+	background: linear-gradient(25deg, #6700FF, #000000, #cccccc);
+	border-radius: 9px;
+	padding: 1px;
+}
+div.buttPad {
+	border-radius: 7px;
+	background-color: #8655FF;
+	color: #ffffff;
+	cursor: pointer;
+	padding:  20px 5px;
+	font-weight: 700;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-size: 1em !important;
+}
+div.buttPad:hover { background-color: #9D76FF; }
+
+
+div.buttFrWrap {
+	background: linear-gradient(25deg, #6700FF, #000000, #cccccc);
+	border-radius: 9px;
+	padding: 1px;
+}
+div.buttFrPad {
+	border-radius: 7px;
+	background-color: #000000;
+	color: #ffffff;
+	cursor: pointer;
+	padding-bottom:5px;
+	font-weight: 700;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-size: 1em;
+}
+div.buttFrPad:hover { background-color:#090612; }
+
+
+div.frameWrap {  
+	background: linear-gradient(25deg, #6700FF, #000000, #cccccc);
+	border-radius: 19px;
+	padding: 1px;
+	margin-right: 20px;
+	 
+}
+div.framePad {
+	background: #000000;
+	color:#fff;
+	border-radius: inherit;
+	padding-bottom:15px;
+	padding-top:15px;
+	
+}	
+div.infoLabel { 	
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.7em;
+	line-height: 100%;
+	float: left;
+	width: 25px;
+	padding-top: 3px;
+}
+div.infoData {
+	border-radius: inherit;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.9em;
+	line-height: 100%;
+	float: left;
+	
+}
+div.infoLabelSeat { 	
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.7em;
+	line-height: 100%;
+	float: left;
+	width: 100px;
+	padding-top: 3px;
+}
+div.infoDataSeat {
+	border-radius: inherit;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.9em;
+	line-height: 100%;
+	float: left;
+	
+}
+
+
+table.seatInfoTable {
+	margin-left: 10px;
+	padding-top: 10px;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.9em;
+	line-height: 100%;
+	width: 200px;
+}
+
+table.legend {
+	margin-left: 20px;
+	padding-top: 10px;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.9em;
+	line-height: 100%;
+	width: 320px;
+}
+table.legend tr td {
+	text-align: left;
+	height:21px;
+}
+
+div.notifyBox {
+	width:200px; /*height:100px;*/ 
+	position: fixed; top:-140px; right: 80px; 
+	z-index:100000000; 
+	color:#ffffff; border-radius: 8px;
+	padding: 10px  10px 20px 10px; 
+	
+	
+}
+div.bodyerror {
+	background-color:#FEDCDA;
+}
+div.bodywarn {
+	background-color:#FFE5B2;
+}
+div.bodyinfo {
+	background-color:#D9E8FF;
+}
+div.headerinfo { 
+	background-image: url("../images/info_ico.png");	
+	background-position: left top;
+	background-repeat: no-repeat;
+	padding: 3px 0 10px 25px;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 100%;
+	color: #01173C;
+	height: 30px;
+	
+}
+div.headererror { 
+	padding: 3px 0 10px 25px;
+	background-image: url("../images/error_ico.png");
+	background-position: left top;
+	background-repeat: no-repeat;
+	padding: 0 0 10px 20px;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 100%;
+	color: #431716;
+	height: 30px;
+}
+div.headerwarn { 
+	padding: 3px 0 10px 25px;
+	background-image: url("../images/warn_ico.png");
+	background-position: left top;
+	background-repeat: no-repeat;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 100%;
+	color: #3A2500;
+	height: 30px;
+}
+div.msginfo { 
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.7em;
+	line-height: 100%;
+	color: #01173C;
+}
+div.msgerror { 
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.7em;
+	line-height: 100%;
+	color: #431716;
+}
+div.msgwarn { 
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.7em;
+	line-height: 100%;
+	color: #3A2500;
+}
+
+div#shadow {
+	position: fixed;
+	top:0; bottom:0;
+	left:0; right:0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow-y: scroll;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 100%;
+	background-image: url("../images/ffonn.png");
+}
+
+div#forfPad { 
+	width:500px;  
+	background:#ffffff; 
+}
+
+div.t-input-error {
+	color:#ff0000;
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 800;
+	font-size: 0.8em;
+	line-height: 100%;
+	padding: 5px 0 0 0;
+}
+input.inputError {
+	border-color: #ff0000;
+}	
+
+div.formHeader {
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 800;
+	font-size: 2.2em;
+	line-height: 100%;
+	text-align: center;
+	padding: 30px 0 20px 0;
+}
+
+div.formHeaderInfo {
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 0.8em;
+	line-height: 100%;
+	text-align: center;
+	padding: 40px 0 20px 0;;
+}
+
+div.inputForm {
+	padding:5px 0;
+	
+}
+div.checkForm {
+	padding:8px 0;
+	
+}
+div.inputForm{
+	height:90px;	
+}
+
+div.inputForm input{
+	padding:20px 0;
+	ont-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 100%;
+	
+}
+div.inputForm label{
+	padding:20px 0;
+	ont-family: 'Manrope';
+	font-style: normal;
+	font-weight: 500;
+	font-size: 1em;
+	line-height: 100%;
+	
+	
+}
+.t-checkbox__indicator {
+	position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    height: 20px;
+    width: 20px;
+    border: 2px solid #ccc;
+    box-sizing: border-box;
+    margin-right: 10px;
+    -webkit-transition: all .2s;
+    transition: all .2s;
+	background-color: #ffffff;
+	margin-left: -24px;
+	margin-top: -6px;
+	background-image: url("../images/chBox.png");
+	background-position: left;
+	background-repeat: no-repeat;
+}
+
+div#orderButton {
+	color: #ffffff; padding: 20px;
+	font-size: 20px;
+	font-family: 'Manrope',Arial,sans-serif;
+	line-height: 1.55;
+	font-weight: 700;
+	border-radius: 11px;
+	background-color: #8655ff;
+	background-position: center center;
+	border-color: transparent;
+	border-style: solid;
+	transition: background-color 0.2s ease-in-out, 
+	color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+	width: 90%;
+	text-align: center;
+	position: stick;
+	cursor: pointer;
+}
+div#orderButton:hover { background-color: #9D76FF; }
+
+div.formClose { 
+	height:20px;
+	width:20px;
+	position:fixed;
+	top:10px;
+	right: 30px;
+	
+}
+svg#formCloseButt {
+	cursor: pointer;
+}
+	
