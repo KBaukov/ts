@@ -59,7 +59,7 @@ func SendTickets(data []*ent.TicketForSend) ([]*ent.SendTicketStatus, error) {
 		resp, err := client.Do(r)
 		if err != nil {
 			log.Printf("Http request error: %v", resp)
-			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "NoSend", "Ошибка соединения с ностом:" + r.URL.Host}
+			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "NoSend", "Ошибка соединения с ностом:" + r.URL.Host, tData.LAED}
 			sts = append(sts, &ts)
 			//resp.Body.Close()
 			continue
@@ -69,12 +69,12 @@ func SendTickets(data []*ent.TicketForSend) ([]*ent.SendTicketStatus, error) {
 
 		if resp.StatusCode == 200 {
 			log.Printf("%v Ticket success Sended %v: ticketNumber: ", i, tData.TICKET_NUMBER)
-			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "OK", resp.Status}
+			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "OK", resp.Status, tData.LAED}
 			sts = append(sts, &ts)
 			//db.OrderLog("ticketSend", "ticketSendSucces", tData.ORDER_NUMBER, "0", "Билет успешно отправлен: "+ticketNumber, "true", "")
 		} else {
 			log.Printf("%v Ticket Not Sended %v: ticketNumber: ", i, tData.TICKET_NUMBER)
-			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "NoSend", resp.Status}
+			ts := ent.SendTicketStatus{tData.ORDER_NUMBER, tData.TICKET_NUMBER, "NoSend", resp.Status, tData.LAED}
 			sts = append(sts, &ts)
 			//db.OrderLog("ticketSend", "ticketSendNoSucces", tData.ORDER_NUMBER, "-1", "Билет не отправлен: "+ticketNumber, "false", resp.Status)
 		}

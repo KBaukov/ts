@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/KBaukov/ts/amo"
 	"github.com/KBaukov/ts/config"
 	"github.com/KBaukov/ts/db"
 	"github.com/KBaukov/ts/handle"
@@ -16,7 +17,7 @@ var (
 )
 
 func init() {
-
+	amo.GetCredential()
 }
 
 func main() {
@@ -95,12 +96,3 @@ func main() {
 
 	log.Print("Сервер запущен: ", listenString)
 }
-
-//func inBackground(db db.Database) {
-//	ticker := time.NewTicker(30 * time.Second) //time.Minute)
-//
-//	for now := range ticker.C {
-//		db.ClearExpiredReserves()
-//		log.Println(now, "#### Clear expired reserved success #####")
-//	}
-//}

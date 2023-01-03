@@ -4,12 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/KBaukov/ts/amo"
 	"github.com/KBaukov/ts/config"
 	"github.com/KBaukov/ts/db"
 	"github.com/KBaukov/ts/ent"
-	"github.com/Nerzal/gocloak"
 	"github.com/gorilla/sessions"
 	"golang.org/x/net/context"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,23 +18,26 @@ import (
 )
 
 var (
-	sessStore     = sessions.NewCookieStore([]byte("33446a9dcf9ea060a0a6532b166da32f304af0de"))
-	cfg           = config.LoadConfig("config.json")
-	mainTemplate  = cfg.FrontRoute.MainTemplate
-	loginTemplate = cfg.FrontRoute.LoginTemplate
-	webres        = cfg.FrontRoute.WebResFolder
-	clientID      = "ts_app"
-	clientSecret  = "7c093669-2e99-41dd-b25f-6cbb7a24dd8d"
-	redirectURL   = "http://localhost:8081/login"
-	configURL     = "http://10.200.42.66:8080"
-	state         = "somestate"
-	realm         = "TicketSystem"
-	client        gocloak.GoCloak
-	ctx           context.Context
+	sessStore      = sessions.NewCookieStore([]byte("33446a9dcf9ea060a0a6532b166da32f304af0de"))
+	cfg            = config.LoadConfig("config.json")
+	mainTemplate   = cfg.FrontRoute.MainTemplate
+	loginTemplate  = cfg.FrontRoute.LoginTemplate
+	webres         = cfg.FrontRoute.WebResFolder
+	clientID       = "ts_app"
+	clientSecret   = "7c093669-2e99-41dd-b25f-6cbb7a24dd8d"
+	redirectURL    = "http://localhost:8081/login"
+	configURL      = "http://10.200.42.66:8080"
+	state          = "somestate"
+	realm          = "TicketSystem"
+	ctx            context.Context
+	amoStagNew     string
+	amoSuccPay     string
+	amoTickSend    string
+	amoSuccClose   string
+	amoNoSuccClose string
 )
 
 type sessData struct {
-	token    gocloak.JWT
 	userInfo map[string]interface{}
 	user     ent.User
 }
@@ -47,7 +51,11 @@ func init() {
 	cfg := config.LoadConfig("config.json")
 	TaxSyst = cfg.OfdData.TaxSyst
 	WsAllowedOrigin = cfg.WsConfig.WsAllowedOrigin
-
+	amoStagNew = cfg.PipelineStages.NewOrder
+	amoSuccPay = cfg.PipelineStages.SuccessPayed
+	amoTickSend = cfg.PipelineStages.TicketSend
+	amoSuccClose = cfg.PipelineStages.SuccessClosed
+	amoNoSuccClose = cfg.PipelineStages.NoSuccessClosed
 }
 
 type errData struct {
@@ -101,7 +109,7 @@ func ServePagesRes(w http.ResponseWriter, r *http.Request) {
 func ServeApi(db db.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		referrer := r.Header.Get("Referrer")
+		referrer := r.Header.Get(":authority")
 
 		log.Printf("incoming request in: %v - ref: %v", r.URL.Path, referrer)
 
@@ -172,25 +180,33 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			reson := r.FormValue("reson")
 			stage := r.FormValue("stage")
 
+			//leadId := r.FormValue("lead_id")
+			//contactId := r.FormValue("contact_id")
+
 			log.Printf("Incomming change {stage: %v, seatIds: %v, orderNum: %v, code: %v, message: %v, success: %v, reson: %v}",
 				stage, seatIds, orderNum, code, message, success, reson)
 
 			if stage == "paySuccess" {
 				_, err := db.SetSeatStatess(seatIds, 2)
 				if err != nil {
-					http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+					//http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 					log.Printf("Ошибка смены статуса места (seatIds: %v ): %v", seatIds, err)
 				}
 				if err != nil {
-					http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+					//http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 					log.Printf("Ошибка смены статуса места (seatIds: %v ): %v", seatIds, err)
 				} else {
 					msg := actionSeatUpdate(seatIds)
 					hub.sendDataToWeb(msg, "TS_system", nil)
 				}
 
-			}
+				//Update CRM lead status
+				//status, _ := amo.LeadStatusUpdate(leadId, amoSuccPay) //"48793132")
+				//if status != "OK" {
+				//	log.Printf("Ошибка смены статуса сделки в Амо CRM : ): %v", status)
+				//}
 
+			}
 			// Логирование в заказ
 			_, err := db.OrderLog("pay", stage, orderNum, code, message, success, reson)
 			if err != nil {
@@ -249,20 +265,46 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			phone := r.FormValue("phone")
 			e := r.FormValue("event_id")
 			eventId, err := strconv.Atoi(e)
+			utmJson := r.FormValue("utm")
+			refId := r.FormValue("ref_id")
+			link := r.FormValue("link")
 			if err != nil {
 				log.Println("err:", err.Error())
 			}
 
-			orderNumber, amount, items, err := db.CreateOrder(name, email, phone, seatIds, eventId)
+			var contactId string
+			var leadId string
+			orderNumber, amount, dAmount, items, err := db.CreateOrder(name, email, phone, seatIds, eventId, utmJson, refId)
 			if err != nil {
 				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 				log.Printf("Ошибка создания заказа (seatIds: %v ): %v", seatIds, err)
 			} else {
-				//msg := actionSeatUpdate(seatIds)
-				//hub.sendDataToWeb(msg, "TS_system")
+				//проброс в amo
+				zone, row, seat, err := db.GetSeatInfoBySvgId(seatIds)
+				if err != nil {
+				}
+
+				contact, _ := amo.CreateContact(name, email, phone)
+				if err != nil {
+					log.Printf("Ошибка создания контакта в AmoCRM  %v", err)
+				}
+				var utm ent.UtmData
+				err = json.Unmarshal([]byte(utmJson), &utm)
+				n := strconv.Itoa(len(items))
+				lead := ent.LeadData{"Покупка билета Fortune2050", orderNumber,
+					int(amount), int(dAmount), amoStagNew, "0", n,
+					zone, row, seat, "Номера билетов еще не присвоены", link}
+
+				leadId, contactId, _ = amo.LeadCreat(lead, utm, contact)
+				//log.Printf("#### LeadId:   %v", leadId)
+
+				_, err = db.AddCrmData(contactId, leadId, orderNumber)
+				//if err != nil {
+				//	log.Printf("Ошибка создания контакта в AmoCRM  %v", err)
+				//}
 			}
 
-			//Заполняем  фискальную инфу
+			//Заполняем  фискальную инфу для  CloudPayments
 			rAmounts := ent.PeceiptAmounts{amount, float32(0), float32(0), float32(0)}
 
 			receipt := ent.Receipt{items, "tickets.fortune2050.com", TaxSyst,
@@ -274,7 +316,7 @@ func ServeApi(db db.Database) http.HandlerFunc {
 
 			pData := ent.PayData{cfg.PaySecrets.PKey, cfg.PaySecrets.Description, amount,
 				cfg.PaySecrets.Curr, email, orderNumber, email,
-				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext}
+				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext, ent.AmoInfoData{contactId, leadId}}
 
 			apiDataResponse(w, pData, nil)
 			return
@@ -288,18 +330,41 @@ func ServeApi(db db.Database) http.HandlerFunc {
 			email := r.FormValue("email")
 			phone := r.FormValue("phone")
 			e := r.FormValue("event_id")
+			utm := r.FormValue("utm")
+			refId := r.FormValue("ref_id")
+			link := r.FormValue("link")
+			contactId := r.FormValue("contact_id")
+			leadId := r.FormValue("lead_id")
 			eventId, err := strconv.Atoi(e)
 			if err != nil {
 				log.Println("err:", err.Error())
 			}
 
-			orderNumber, amount, items, err := db.UpdateOrder(orderNumber, name, email, phone, seatIds, eventId)
+			amoData := ent.AmoInfoData{contactId, leadId}
+
+			orderNumber, amount, dAmount, items, err := db.UpdateOrder(orderNumber, name, email, phone, seatIds, eventId, utm, amoData, refId)
 			if err != nil {
 				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
 				log.Printf("Ошибка создания заказа (seatIds: %v ): %v", seatIds, err)
 			} else {
-				//msg := actionSeatUpdate(seatIds)
-				//hub.sendDataToWeb(msg, "TS_system")
+				//проброс в amo
+				zone, row, seat, err := db.GetSeatInfoBySvgId(seatIds)
+				if err != nil {
+				}
+
+				isOk, _ := amo.UpdateContact(name, email, phone, contactId)
+				if isOk != "OK" {
+					log.Printf("Ошибка изменения контакта в AmoCRM  %v", err)
+				}
+				n := strconv.Itoa(len(items))
+				lead := ent.LeadData{"Покупка билета Fortune2050", orderNumber,
+					int(amount), int(dAmount), amoStagNew, "0", n,
+					zone, row, seat, "Номера билетов еще не присвоены", link}
+
+				isOk, _ = amo.LeadUpdate(leadId, lead)
+				if isOk != "OK" {
+					log.Printf("Ошибка изменения сделки в AmoCRM  %v", err)
+				}
 			}
 
 			//Заполняем  фискальную инфу
@@ -314,10 +379,23 @@ func ServeApi(db db.Database) http.HandlerFunc {
 
 			pData := ent.PayData{cfg.PaySecrets.PKey, cfg.PaySecrets.Description, amount,
 				cfg.PaySecrets.Curr, email, orderNumber, email,
-				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext}
+				cfg.PaySecrets.Template, cfg.PaySecrets.AutoClose, ext, amoData}
 
 			apiDataResponse(w, pData, nil)
 			return
+		}
+
+		if r.URL.Path == "/api/getdiscount" && r.Method == "GET" {
+
+			rId := r.FormValue("ref_id")
+			discount, err := db.GetDiscountByRefID(rId)
+			if err != nil {
+				http.Error(w, "Ошибка обработки запроса", http.StatusInternalServerError)
+				log.Printf("Ошибка запроса информации о скидке (ref_id: %v ): %v", rId, err)
+			}
+			apiDataResponse(w, discount, err)
+			return
+
 		}
 
 		if r.URL.Path == "/api/seattarifs" && r.Method == "GET" {
@@ -349,6 +427,20 @@ func ServeApi(db db.Database) http.HandlerFunc {
 				log.Printf("Ошибка запроса информации о тарифах (eventId: %v ): %v", eventId, err)
 			}
 			apiDataResponse(w, tariffs, err)
+			return
+		}
+
+		if r.URL.Path == "/api/amo" && r.Method == "GET" {
+
+			body, err := r.GetBody()
+			if err != nil {
+				log.Println("err:", err.Error())
+			}
+			defer body.Close()
+
+			ddd, _ := ioutil.ReadAll(body)
+			log.Printf("########### Body:  %v", string(ddd))
+
 			return
 		}
 

@@ -3,9 +3,11 @@ package db
 import (
 	_ "encoding/json"
 	"fmt"
+	"github.com/KBaukov/ts/amo"
 	"github.com/KBaukov/ts/config"
 	"github.com/KBaukov/ts/ent"
 	"github.com/KBaukov/ts/esend"
+	"math"
 	_ "math"
 	_ "reflect"
 	_ "sort"
@@ -22,10 +24,11 @@ import (
 )
 
 var (
-	OfdVat     int
-	OfdMathod  int
-	OfdOobject int
-	TaxSyst    int
+	OfdVat      int
+	OfdMathod   int
+	OfdOobject  int
+	TaxSyst     int
+	amoTickSend string
 )
 
 const (
@@ -40,6 +43,11 @@ t.price::numeric::int as price from seats s, tariff t
 where s.svg_id  = $1
 and s.tariff_id =t.tariff_id;`
 
+	addCrmDataInOrder = `update orders set customer_data = customer_data || ($1)::jsonb where order_number = $2;`
+
+	getSeatInfoBySvgId = `select t.tariff_name as zone, seat->>'row' as row, seat->>'place' as seat from seats s, tariff t  
+    where svg_id in ( select * from UNNEST(regexp_split_to_array($1, ' '))) and s.tariff_id =t.tariff_id;`
+
 	getEventTarifsQuery = `select tariff_id, event_id, price::numeric::int as price, price_currency, tariff_name, tariff_zone_id, count 
 							from tariff where event_id = $1 order by tariff_id;`
 
@@ -51,14 +59,20 @@ and s.tariff_id =t.tariff_id;`
 	createNewOrder      = `insert into orders (order_number, order_status, order_log, customer_data, event_id, amount, amount_currency) 
 values ($1, $2, ( $3 )::jsonb, ( $4 )::jsonb, $5, $6, $7);`
 
+	assignSeatToOrder = `update seats set order_id = $1 where svg_id in ( select unnest(regexp_split_to_array($2,' ')));`
+
 	updateOrder = `update orders set order_log= order_log|| ($1)::jsonb, customer_data =$2, amount=$3 where order_number = $4;`
 
 	orderLog = `update orders set order_log = order_log || ($1)::jsonb , order_status = $2 where order_number = $3;`
+
+	getOrderIdByNumber = `select order_id from orders where order_number = $1;`
 
 	getAmountBySeats = `select seat->>'zone' as zone, seat->>'row' as row, seat->>'place' as seat, 
 t.price::numeric::float as price, t.price_currency  from seats s, tariff t  
 where s.svg_id in (select unnest(string_to_array($1, ' ')) as dd)
 and s.tariff_id = t.tariff_id;`
+
+	getDiscountByRefId = `select * from discount_ref where ref_id = $1;`
 
 	getSeatTarif = `select tt.price::numeric::int as p, tt.tariff_name as t, s.svg_id as id from seats s, tariff tt where tt.tariff_id =s.tariff_id and tt.event_id = $1;`
 
@@ -67,8 +81,8 @@ and s.tariff_id = t.tariff_id;`
 	clearStatusForUnreserved = `update seats set state = 0 where state=1 and seat_id not in ( select seat_id from reserv );`
 
 	getTicketsForSend = `select o.order_status, o.order_log#>'{0}'->>'log_time' dt, o.order_number, o.customer_data->>'name' as name,
-o.customer_data->>'email' as email, o.customer_data->>'phone' as pone,
-s.seat ->>'zone' as sector,  (s.seat ->>'row') as row, s.seat ->>'place' as seat, s.seat_id
+o.customer_data->>'email' as email, o.customer_data->>'phone' as pone, s.seat ->>'zone' as sector,  (s.seat ->>'row') as row, 
+s.seat ->>'place' as seat, s.seat_id, o.customer_data ->'crm'->>'lead_id' as lead_id
 from orders o, seats s CROSS JOIN UNNEST(regexp_split_to_array(o.customer_data->>'seats', ' ') ) as ss
 where o.order_status in ('4','6') and s.svg_id = ss;`
 
@@ -95,6 +109,7 @@ func init() {
 	OfdMathod = cfg.OfdData.OfdMathod
 	OfdOobject = cfg.OfdData.OfdOobject
 	TaxSyst = cfg.OfdData.TaxSyst
+	amoTickSend = cfg.PipelineStages.TicketSend
 }
 
 // dbService представляет интерфейс взаимодействия с базой данных
@@ -407,87 +422,198 @@ func (db Database) OrderLog(act string, stage string, orderNum string, code stri
 	return true, err
 }
 
-func (db Database) UpdateOrder(orderNumber string, name string, email string, phone string, svgIds string, eventId int) (string, float32, []*ent.Item, error) {
+func (db Database) UpdateOrder(orderNumber string, name string, email string, phone string, svgIds string, eventId int, utm string, amoData ent.AmoInfoData, refId string) (string, float32, float32, []*ent.Item, error) {
 
 	//определение суммы заказа
-	amount, items, err := db.CalculateOrderAmount(svgIds)
+	amount, dAmount, items, err := db.CalculateOrderAmount(svgIds, refId)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
 
 	stmt, err := db.Conn.Prepare(updateOrder)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
 	defer stmt.Close()
 
+	crmData := "{\"crm\":{\"contact_id\":" + amoData.CONTACTID + ",\"lead_id\":" + amoData.LEADID + "}}"
+
 	pp := name + "|" + email + "|" + name + "|" + phone + "|" + svgIds
 	orderLog := "[{\"log_time\":\"" + time.Now().Format("2006-01-02T15:04:05") + "\", \"action\":\"updateCreate\",\"actor\":\"system\",\"params\":\"" + pp + "\"}]"
-	cData := "{\"name\":\"" + name + "\", \"email\":\"" + email + "\", \"phone\":\"" + phone + "\",\"seats\":\"" + svgIds + "\" }"
+	cData := "{\"name\":\"" + name + "\", \"email\":\"" + email + "\", \"phone\":\"" + phone + "\",\"seats\":\"" + svgIds + "\", \"utm\": " + utm + ", \"crm\": " + crmData + " }"
 
 	_, err = stmt.Exec(orderLog, cData, amount, orderNumber)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
-	return orderNumber, amount, items, err
+	return orderNumber, amount, dAmount, items, err
 
 }
 
-func (db Database) CreateOrder(name string, email string, phone string, svgIds string, eventId int) (string, float32, []*ent.Item, error) {
+func (db Database) CreateOrder(name string, email string, phone string, svgIds string, eventId int, utm string, refId string) (string, float32, float32, []*ent.Item, error) {
 	//определение следующего номера заказа
 	orderNumber, err := db.GetNewOrderNumber(eventId)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
 
 	//определение суммы заказа
-	amount, items, err := db.CalculateOrderAmount(svgIds)
+	amount, dAmount, items, err := db.CalculateOrderAmount(svgIds, refId)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
 
 	// insert into orders (order_number, order_status, order_log, customer_data, event_id) values ($1, $2. $3, $4, $5);
 	stmt, err := db.Conn.Prepare(createNewOrder)
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
 	defer stmt.Close()
 
 	pp := name + "|" + email + "|" + name + "|" + phone + "|" + svgIds
 	orderLog := "[{\"log_time\":\"" + time.Now().Format("2006-01-02T15:04:05") + "\", \"action\":\"orderCreate\",\"actor\":\"system\",\"params\":\"" + pp + "\"}]"
 
-	cData := "{\"name\":\"" + name + "\", \"email\":\"" + email + "\", \"phone\":\"" + phone + "\",\"seats\":\"" + svgIds + "\" }"
+	cData := "{\"name\":\"" + name + "\", \"email\":\"" + email + "\", \"phone\":\"" + phone + "\",\"seats\":\"" + svgIds + "\", \"utm\":" + utm + ", \"crm\": {} }"
 
 	_, err = stmt.Exec(orderNumber, 0, orderLog, cData, eventId, amount, "RUB")
 	if err != nil {
 		log.Println("Error while create new order:  = %v", err)
-		return "", 0, nil, err
+		return "", 0, 0, nil, err
 	}
-	return orderNumber, amount, items, err
+
+	stmt, err = db.Conn.Prepare(getOrderIdByNumber)
+	if err != nil {
+		log.Println("Error while get orderId:  = %v", err)
+		return "", 0, 0, nil, err
+	}
+	rows, err := stmt.Query(orderNumber)
+	if err != nil {
+		log.Println("Error while get orderId:  = %v", err)
+		return "", 0, 0, nil, err
+	}
+	var orderID int
+	for rows.Next() {
+		err = rows.Scan(&orderID)
+		if err != nil {
+			log.Println("Error while get orderId:  = %v", err)
+		}
+	}
+
+	stmt, err = db.Conn.Prepare(assignSeatToOrder)
+	if err != nil {
+		log.Println("Error while assign seat to order order:  = %v", err)
+		return "", 0, 0, nil, err
+	}
+	_, err = stmt.Exec(orderID, svgIds)
+	if err != nil {
+		log.Println("Error while assign seat to order order:  = %v", err)
+		return "", 0, 0, nil, err
+	}
+
+	return orderNumber, amount, dAmount, items, err
 }
 
-func (db Database) CalculateOrderAmount(svgIds string) (float32, []*ent.Item, error) {
+func (db Database) AddCrmData(contactId string, leadId string, orderNum string) (bool, error) {
+
+	stmt, err := db.Conn.Prepare(addCrmDataInOrder)
+	if err != nil {
+		log.Println("Error while add crm data in order:  = %v", err)
+		return false, err
+	}
+	crmData := "{\"crm\":{\"contact_id\":" + contactId + ",\"lead_id\":" + leadId + "}}"
+	_, err = stmt.Exec(crmData, orderNum)
+	if err != nil {
+		log.Println("Error while add crm data in order:  = %v", err)
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (db Database) GetDiscountByRefID(refId string) (ent.DiscountRef, error) {
+	var discount ent.DiscountRef
+	stmt, err := db.Conn.Prepare(getDiscountByRefId)
+	if err != nil {
+		log.Println("Error while calculete amount:  = %v", err)
+		return discount, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(refId)
+	if err != nil {
+		log.Println("Error while calculete discount:  = %v", err)
+		return discount, err
+	}
+
+	for rows.Next() {
+		var (
+			id     int
+			rId    string
+			dType  string
+			amount int
+			count  int
+		)
+		err = rows.Scan(&id, &rId, &dType, &amount, &count)
+		if err != nil {
+			log.Println("Error while calculete amount:  = %v", err)
+			return discount, err
+		}
+		discount = ent.DiscountRef{id, rId, dType, amount, count}
+	}
+
+	return discount, nil
+}
+
+func (db Database) CalculateOrderAmount(svgIds string, refId string) (float32, float32, []*ent.Item, error) {
 
 	items := make([]*ent.Item, 0)
 
-	stmt, err := db.Conn.Prepare(getAmountBySeats)
+	//вычисление скидки
+	stmt, err := db.Conn.Prepare(getDiscountByRefId)
 	if err != nil {
 		log.Println("Error while calculete amount:  = %v", err)
-		return 0, nil, err
+		return 0, 0, nil, err
 	}
 	defer stmt.Close()
-	rows, err := stmt.Query(svgIds)
+	rows, err := stmt.Query(refId)
+	if err != nil {
+		log.Println("Error while calculete discount:  = %v", err)
+		return 0, 0, items, err
+	}
+	var discount ent.DiscountRef
+	for rows.Next() {
+		var (
+			id     int
+			rId    string
+			dType  string
+			amount int
+			count  int
+		)
+		err = rows.Scan(&id, &rId, &dType, &amount, &count)
+		if err != nil {
+			log.Println("Error while calculete amount:  = %v", err)
+			return 0, 0, items, err
+		}
+		discount = ent.DiscountRef{id, rId, dType, amount, count}
+	}
+	//вычисление сумм по каждому месту с применением скидки
+	stmt, err = db.Conn.Prepare(getAmountBySeats)
 	if err != nil {
 		log.Println("Error while calculete amount:  = %v", err)
-		return 0, items, err
+		return 0, 0, nil, err
 	}
-	var amount float32
+	rows, err = stmt.Query(svgIds)
+	if err != nil {
+		log.Println("Error while calculete amount:  = %v", err)
+		return 0, 0, items, err
+	}
+	var amount float64
+	var dAmount float64
 	for rows.Next() {
 		var (
 			cZone string
@@ -499,15 +625,37 @@ func (db Database) CalculateOrderAmount(svgIds string) (float32, []*ent.Item, er
 		err = rows.Scan(&cZone, &cRow, &cSeat, &cPice, &cCurr)
 		if err != nil {
 			log.Println("Error while calculete amount:  = %v", err)
-			return 0, items, err
+			return 0, 0, items, err
 		}
-		amount += float32(cPice)
+		var dPrice float64
+		if discount.AMOUNT > 0 && !(strings.Contains(svgIds, "e1z1r") ||
+			strings.Contains(svgIds, "e1z2r") ||
+			strings.Contains(svgIds, "e1z11r") ||
+			strings.Contains(svgIds, "e1z12r")) {
+
+			if discount.DISC_TYPE == "procent" {
+				dPrice = roundFloat(float64(cPice)-float64(cPice)*(float64(discount.AMOUNT)/100), 2)
+			}
+			if discount.DISC_TYPE == "summ" {
+				dPrice = roundFloat(float64(cPice)-float64(discount.AMOUNT), 2)
+			}
+		} else {
+			dPrice = float64(cPice)
+		}
+
+		amount += dPrice
+		dAmount += (float64(cPice) - dPrice)
 		item := ent.Item{"Билет на мероприятие Fortune2050: " + cZone + " ряд " + cRow + " место " + cSeat,
-			float32(cPice), float32(1.00), float32(cPice), OfdVat, OfdMathod, OfdOobject, "шт"}
+			dPrice, float32(1.00), dPrice, OfdVat, OfdMathod, OfdOobject, "шт"}
 		items = append(items, &item)
 	}
 
-	return amount, items, nil
+	return float32(amount), float32(dAmount), items, nil
+}
+
+func roundFloat(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
 }
 
 func (db Database) GetNewOrderNumber(eventId int) (string, error) {
@@ -636,6 +784,45 @@ func (db Database) GetSeatTarif(event_id int) ([]*ent.SeatTarif, error) {
 	return st, nil
 }
 
+func (db Database) GetSeatInfoBySvgId(svgIds string) (string, string, string, error) {
+
+	stmt, err := db.Conn.Prepare(getSeatInfoBySvgId)
+	if err != nil {
+		return "", "", "", err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(svgIds)
+	if err != nil {
+		return "", "", "", err
+	}
+	rZone := ""
+	rRow := ""
+	rSeat := ""
+
+	for rows.Next() {
+		var (
+			zone string
+			row  string
+			seat string
+		)
+		err = rows.Scan(&zone, &row, &seat)
+		if err != nil {
+			log.Println("Error while get seats info:  = %v", err)
+			return "", "", "", err
+		}
+		if !strings.Contains(rZone, zone) {
+			rZone += "," + zone
+		}
+		if !strings.Contains(rRow, row) {
+			rRow += "," + row
+		}
+
+		rSeat += "," + seat
+	}
+
+	return rZone[1:], rRow[1:], rSeat[1:], err
+}
+
 func (db Database) SendTickets() (bool, error) {
 	stt := make([]*ent.TicketForSend, 0)
 	stmt, err := db.Conn.Prepare(getTicketsForSend)
@@ -661,11 +848,17 @@ func (db Database) SendTickets() (bool, error) {
 			row     string
 			seat    string
 			seat_id int
+			leadId  string
 		)
-		err = rows.Scan(&oStatus, &oDate, &oNumb, &name, &email, &phone, &sect, &row, &seat, &seat_id)
+		err = rows.Scan(&oStatus, &oDate, &oNumb, &name, &email, &phone, &sect, &row, &seat, &seat_id, &leadId)
 		if err != nil {
-			log.Println("Error while get tikets fo send:  = %v", err)
-			return false, err
+			if strings.Contains(err.Error(), "lead_id") {
+				leadId = ""
+				log.Println("Error lead_id = null", err)
+			} else {
+				log.Println("Error while get tikets fo send:  = %v", err)
+				return false, err
+			}
 		}
 		var tNumb string
 		if oStatus == 4 {
@@ -682,7 +875,7 @@ func (db Database) SendTickets() (bool, error) {
 			}
 		}
 
-		st := ent.TicketForSend{oDate, oNumb, tNumb, name, email, phone, sect, row, seat}
+		st := ent.TicketForSend{oDate, oNumb, tNumb, name, email, phone, sect, row, seat, leadId}
 		stt = append(stt, &st)
 	}
 
@@ -691,18 +884,46 @@ func (db Database) SendTickets() (bool, error) {
 		fmt.Println(err)
 		//return false, err
 	}
-	for _, sst := range sts {
+
+	tMap := make(map[string]string)
+	var tickets string
+	var ord string
+	for i, sst := range sts {
+
 		//Log  Order
 		var stage string
 		if sst.STATUS == "OK" {
 			stage = "ticketSendSucces"
 			db.OrderLog("ticketSend", stage, sst.ORDER_NUMBER, "0", "Билет успешно отправлен: "+sst.TICKET_NUMBER, "true", sst.REASON)
+			if ord == sst.ORDER_NUMBER || i == 0 {
+				tickets += "," + sst.TICKET_NUMBER
+			} else {
+				tickets = "," + sst.TICKET_NUMBER
+			}
+			tMap[sst.LAED] = tickets
+			ord = sst.ORDER_NUMBER
 		} else {
 			stage = "ticketSendNoSucces"
 			db.OrderLog("ticketSend", stage, sst.ORDER_NUMBER, "0", "Билет небыл отправлен: "+sst.TICKET_NUMBER, "false", sst.REASON)
 		}
+	}
 
-		//
+	if len(tMap) > 0 {
+		//Update CRM lead status
+		for k, v := range tMap {
+			if k != "" {
+				status, _ := amo.LeadStatusTicketsUpdate(k, amoTickSend, v[1:]) //"48793132")
+				if status != "OK" {
+					log.Printf("Ошибка смены статуса сделки в Амо CRM : ): %v", status)
+				} else {
+					log.Printf("Сделка %v переведена в статус %v в Амо CRM : ): ", k, amoTickSend)
+				}
+
+			} else {
+				log.Printf("Ошибка смены статуса сделки в Амо CRM : ): lead_id = null")
+			}
+
+		}
 
 	}
 

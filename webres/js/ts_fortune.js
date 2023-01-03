@@ -9,25 +9,60 @@ addSeatForPay = function(node) {
 		var dd = $('tr', tab);
 		var n = dd.length;
 		var tr = $(dd[n-1]);
-		tr.append($('<td>', {}));
+		tr.append($('<td>', { text: sector}));
+		tr.append($('<td>', {text: formatSeat(id,1,null)}));
+		tr.append($('<td>', {text: formatSeat(id,null, 1)}));
+		var pr = node.getAttribute('tp');
+		var fpr = number_format(pr,0, '.', ' ');
+		tr.append($('<td>', { text: fpr+' ₽' }));
+		tr.append($('<td>', { }));
 		dd = $('td', tab);
 		n = dd.length;
 		var td =$(dd[n-1]);
-		td.append($('<div>', { class: 'infoLabelSeat', text: formatSeat(id)}));
+		var aa = $('<a>', { class: 'delete-row', ss: id });
+		 td.append(aa);  //class: 'infoDataSeat',
 
-		tr.append($('<td>', {}));
-		dd = $('td', tab);
-		n = dd.length;
-		var td =$(dd[n-1]);
-		td.append($('<div>', { class: 'infoDataSeat', text: node.getAttribute('tp')+' ₽'}));
+		var pr = parseInt(node.getAttribute('tp'));
+		totalAmount += pr;
+		var dd = sessionStorage.getItem('discountData');
+		var dData = JSON.parse(dd);
+		if(dData.amount >0 && isDiscShow) {
+			if(dData.discount_type=='procent') {
+				discountAmount = Math.round(totalAmount * dData.amount/100);
+			} else {
+				discountAmount = totalAmount - dData.amount;
+			}
+
+		} else
+			discountAmount = 0;
+		if(discountAmount>0) {
+			$("span#totalAmount")[0].innerHTML = '<span class="old-price">'+
+				number_format(totalAmount,0, '.', ' ')+' ₽</span>'
+				+number_format((totalAmount-discountAmount),0, '.', ' ') + ' ₽';
+		} else {
+			$("span#totalAmount")[0].innerHTML = number_format(totalAmount,0, '.', ' ') +' ₽';
+		}
+
+
+		aa.click(removeRow);
+
 	} else
 		return null;
 };
 
-var formatSeat = function(id) {
+var totalAmount=0;
+
+
+var formatSeat = function(id, isR, isM) {
 	var tt = id.split('r');
 	var ww = tt[1].split('m');
-	return 'ряд '+ww[0]+' место '+ww[1];
+	if(isR) {
+		return ww[0];
+	}
+	if(isM) {
+		return ww[1];
+	}
+	return 'Ряд '+ww[0]+', Место '+ww[1];
 };
 
 var emptyStore = function() {
@@ -38,12 +73,26 @@ var emptyStore = function() {
 		return null;
 }
 
+var removeRow = function(e) {
+	var ss = e.target.getAttribute('ss');
+	var node = $("path#"+ss,getSvgRoot());
+	if(node[0]) {
+		selectSeat(node[0]);
+	}
+
+}
+
 var removeSeatFromPay = function(node) {
+	var id = node.id;
 	var sklad = $("div#tForPay");
 	if(sklad[0]) {
-		sklad[0].classList.remove(node);
+		sklad[0].classList.remove(id);
 		var tab = $("table#selSeatsInfo");
-		$("tr#tt_"+node).remove();
+		$("tr#tt_"+id).remove();
+
+		var pr = parseInt(node.getAttribute('tp'));
+		totalAmount -= pr;
+		$("span#totalAmount")[0].innerHTML = totalAmount+' ₽';
 	}
 
 };
@@ -68,34 +117,58 @@ var getSeatForPay = function() {
 		return [];
 };
 
+var isHoverLock = false;
+
 var opSw1 = function(e) {
+	if(isHoverLock) return;
 	var s = e.target;
-	var box = $("div#infoBox");
+	//var x = e.x; var y =e.y;
+
 	if(!s.classList.contains('seatOcup') && !s.classList.contains('seatSel')  && !s.classList.contains('seatBlock')) {
-		//var box = $("div#infoBox");
-		//var tt = resolveTarif(s.id);
+		var box = $("div#infoBox");
+		var svgBox = $("#"+cSvg)[0].getBoundingClientRect();
 		if(box) {
-			$("div#seatZoneName",box).html(s.getAttribute('tn'));
+			$("div#seatZoneName",box).html(sector); //s.getAttribute('tn'));
+			$("div#seatName",box).html(formatSeat(e.target.id, null, null));
 			$("div#seatPrice",box).html(s.getAttribute('tp')+' ₽');
+			if(!isTooltipBlock) box[0].style.display = 'block';
+			box[0].style.top = (e.originalEvent.clientY+svgBox.top-120)+'px';
+			box[0].style.left = (e.originalEvent.clientX+svgBox.left-70)+'px';
 		}
 		s.style.fillOpacity = 0.6;
 		//box[0].style.display='block';
 	}
 };
 var opSw2 = function(e) {
+	if(isHoverLock) return;
 	var s = e.target;
 	var box = $("div#infoBox");
+	box[0].style.display = 'none';
 	if(!s.classList.contains('seatOcup') && !s.classList.contains('seatSel')  && !s.classList.contains('seatBlock') ) {
 		s.style.fillOpacity = 0.1;
 		$("div#seatZoneName",box).html('');
 		$("div#seatPrice",box).html('');
-		//$("div#infoBox")[0].style.display = 'none';
+	}
+};
+var opSwMove = function(e) {
+	var s = e.target;
+	if(!s.classList.contains('seatOcup') && !s.classList.contains('seatSel')  && !s.classList.contains('seatBlock') ) {
+		var box = $("div#infoBox");
+		var svgBox = $("#"+cSvg)[0].getBoundingClientRect();
+		var zBox = $("#tForPay")[0].getBoundingClientRect();
+		if(box) {
+			if(!isTooltipBlock) box[0].style.display = 'block';
+			box[0].style.top = (e.originalEvent.clientY+svgBox.top-120)+'px';
+			box[0].style.left = (e.originalEvent.clientX+svgBox.left-70)+'px';
+		}
 	}
 };
 var opSwOn = function(e) {
 	e.target.style.fillOpacity = 0.3;
-	$("div#tarName").html('Не выбран');
-	$("div#tarPrice").html('');
+	var box = $("div#zoneInfoBox");
+	if(box) {
+		box[0].style.display = 'none';
+	}
 
 };
 var opSwOff = function(e) {
@@ -111,13 +184,50 @@ var opSwOff = function(e) {
 				$("div#tarPrice").html('от '+node.min+' ₽');
 			}
 		}
-
 	}
-
+	var box = $("div#zoneInfoBox");
+	var svgBox = $("#"+cSvg)[0].getBoundingClientRect();
+	if(box) {
+		if(!isTooltipBlock) box[0].style.display = 'block';
+		box[0].style.top = (e.originalEvent.clientY+svgBox.top-120)+'px';
+		box[0].style.left = (e.originalEvent.clientX+svgBox.left-70)+'px';
+	}
 };
 
+var opSWmove = function(e) {
+	var box = $("div#zoneInfoBox");
+	var svgBox = $("#"+cSvg)[0].getBoundingClientRect();
+	if(box) {
+		if(!isTooltipBlock)  box[0].style.display = 'block';
+		box[0].style.top = (e.originalEvent.clientY+svgBox.top-120)+'px';
+		box[0].style.left = (e.originalEvent.clientX+svgBox.left-70)+'px';
+	}
+};
+
+// function oMousePos(svg, evt) {
+// 	var ClientRect = svg.getBoundingClientRect();
+// 	return { //objeto
+// 		x: Math.round(evt.clientX - ClientRect.left),
+// 		y: Math.round(evt.clientY - ClientRect.top)
+// 	}
+// };
+//
+// function getCursorPosition(event, svgElement) {
+// 	//var svg = getSvgRoot();
+// 	var svgPoint = svgElement.createSVGPoint();
+// 	svgPoint.x = event.clientX;
+// 	svgPoint.y = event.clientY;
+// 	return svgPoint.matrixTransform(svgElement.getScreenCTM().inverse());
+// };
+
 var selectSeat = function(e) {
-	var s = e.target;
+	var s;
+
+	if(e.type) {
+		s = e.target;
+	} else {
+		s = e;
+	}
 
 	if(s.classList.contains('seatBlock')) {
 		notify('info','Извините это место заблокировано для продажи.');
@@ -130,7 +240,7 @@ var selectSeat = function(e) {
 	if(s.classList.contains('seatSel')) {
 		ws.send('{"action":"unreserve", "seat_id":"'+s.id+'"}');
 		s.classList.remove('seatSel');
-		removeSeatFromPay(s.id);
+		removeSeatFromPay(s);
 	} else {
 		ws.send('{"action":"reserve", "seat_id":"'+s.id+'"}');
 	}
@@ -204,6 +314,9 @@ var renew = function(e) {
 							s[0].classList.remove('seatOcup');
 						}
 					}
+					//$("div#infoBox")[0].style.left = "-200px;"
+					//$("div#infoBox").show();
+
 				}
 			} else {}
 		}).fail(function() {
@@ -215,9 +328,12 @@ var renew = function(e) {
 
 var orderLog = function(stage, seats, order_num, paymentResult, reson) {
 	var code = paymentResult.code;
+	var sesData = JSON.parse(sessionStorage.getItem('cData'));
+	var leadId =  sesData.amoData.lead_id;
+	var contactId =  sesData.amoData.contact_id;
 
 	$.post( "/api/order/log", { stage: stage, seat_ids: seats, order_number: order_num, code:paymentResult.code,
-		message:paymentResult.message, succes: (paymentResult.success ? 'true':'false' ), reason:reson  })
+		message:paymentResult.message, succes: (paymentResult.success ? 'true':'false' ), reason:reson , lead_id: leadId, contact_id: contactId })
 		.done(function( resp,success ) {
 			if(code==200) {
 				sessionStorage.removeItem('cData');
@@ -236,7 +352,8 @@ var BuySeats = function(payData, seatsIds) {
 		onSuccess: function (options) { // success
 			var paymentResult = {code: "200", message:'Платеж подтвержден', success: true};
 			orderLog('paySuccess',seatsIds, order_num, paymentResult, '');
-			window.location = '/paysuccess';
+			var sesData = JSON.parse(sessionStorage.getItem('cData'))
+			window.location = 'https://fortune2050.com/success/'+window.location.search;
 		},
 		onFail: function (reason, options) { // fail
 			notify('error','Оплата не проведена: '+reason);
@@ -253,7 +370,7 @@ var BuySeats = function(payData, seatsIds) {
 
 var getCustomerData = function() {
 	var seats = getSeatForPay();
-	if(!seats) {
+	if(!seats || seats.length==0) {
 		notify('warn','Места не выбраны');
 		return;
 	}
@@ -270,7 +387,7 @@ var getDataFromForm = function(form) {
 		var inp = fi[i];
 		if(inp.name == 'name') customData.name = inp.value.trim();
 		if(inp.name == 'email') customData.email = inp.value.trim();
-		if(inp.name == 'phone') customData.phone = inp.value.trim();
+		if(inp.name == 'phone') customData.phone = $("input#customDataPhone").intlTelInput("getNumber");
 		if(inp.name == 'seats') customData.seats = inp.value.trim();
 		if(inp.name == 'checkbox') customData.checkbox = inp.checked;
 	}
@@ -288,8 +405,11 @@ var formClose = function(e) {
 }
 
 var formOpen = function(isClear) {
-	$("div#shadow").show();
-	$("div#shadow").animate({ opacity: 1}, 500, function() { });
+	//if() {
+		$("div#shadow").show();
+		$("div#shadow").animate({ opacity: 1}, 500, function() { });
+	//}
+
 }
 
 var orderCreate = function(e) {
@@ -308,18 +428,26 @@ var orderCreate = function(e) {
 
 	if( sesData ) {
 		customData.order_number = sesData.invoiceId;
+		customData.utm = sessionStorage.utm;
+		customData.ref_id = refId;
+		customData.link = link;
+		customData.contact_id = sesData.amoData.contact_id;
+		customData.lead_id = sesData.amoData.lead_id;
 		$.get( "/api/order", customData)
-		.done(function( resp,success ) {
-			if(success) {
-				var cData = resp.data;
-				sessionStorage.setItem('cData', JSON.stringify(cData));
-				formClose('ts');
-				BuySeats(cData, customData.seats);
-			} else {
-				notify('error', resp.msg);
-			}
-		});
+			.done(function( resp,success ) {
+				if(success) {
+					var cData = resp.data;
+					sessionStorage.setItem('cData', JSON.stringify(cData));
+					formClose('ts');
+					BuySeats(cData, customData.seats);
+				} else {
+					notify('error', resp.msg);
+				}
+			});
 	} else {
+		customData.utm = sessionStorage.utm;
+		customData.ref_id = refId;
+		customData.link = link;
 		$.post( "/api/order", customData)
 			.done(function( resp,success ) {
 				if(success) {
@@ -336,64 +464,90 @@ var orderCreate = function(e) {
 
 }
 
+var sector = '';
+var isLeft = false;
+var isDiscShow = true;
+
 var sss = function(e) {
 	var mapID = e.target.id ? e.target.id : e.target.parentElement.id;
-	var isLeft = false;
-
+	isLeft = false;
 	if(mapID.includes('zone')) {
 		$("div#bigMap").animate({width: 0, height: 0}, 500, function () {});
-		if (mapID == 'zone1') { cSvg = 'crocusHoleZone1'; isLeft = false; }
-		if (mapID == 'zone2') { cSvg = 'crocusHoleZone2'; isLeft = true; }
-		if (mapID == 'zone3') { cSvg = 'crocusHoleZone3'; isLeft = false; }
-		if (mapID == 'zone4') { cSvg = 'crocusHoleZone4'; isLeft = true; }
-		if (mapID == 'zone5') { cSvg = 'crocusHoleZone5'; isLeft = false; }
-		if (mapID == 'zone6') { cSvg = 'crocusHoleZone6'; isLeft = true; }
-		if (mapID == 'zone7') { cSvg = 'crocusHoleZone7'; isLeft = false; }
-		if (mapID == 'zone8') { cSvg = 'crocusHoleZone8'; isLeft = true; }
-		if (mapID == 'zone9') { cSvg = 'crocusHoleZone9'; isLeft = false; }
-		if (mapID == 'zone10') { cSvg = 'crocusHoleZone10'; isLeft = true; }
-		if (mapID == 'zone11') { cSvg = 'crocusHoleZone11'; isLeft = false; }
-		if (mapID == 'zone12') { cSvg = 'crocusHoleZone12'; isLeft = true; }
-		if (mapID == 'zone13') { cSvg = 'crocusHoleZone13'; isLeft = true; }
-		if (mapID == 'zone14') { cSvg = 'crocusHoleZone14'; isLeft = true; }
-		if (mapID == 'zone15') { cSvg = 'crocusHoleZone15'; isLeft = false; }
-		$("div#" + mapID + "Map").animate({width: '100%', height: '100%', marginLeft: -120}, 1000, function () {
+		if (mapID == 'zone1') { cSvg = 'crocusHoleZone1'; isLeft = false; sector='VIP-ПАРТЕР'; isDiscShow = false;}
+		if (mapID == 'zone2') { cSvg = 'crocusHoleZone2'; isLeft = true;  sector='VIP-ПАРТЕР'; isDiscShow = false;}
+		if (mapID == 'zone3') { cSvg = 'crocusHoleZone3'; isLeft = false; sector='VIP-ПАРТЕР';}
+		if (mapID == 'zone4') { cSvg = 'crocusHoleZone4'; isLeft = true; sector='VIP-ПАРТЕР';}
+		if (mapID == 'zone5') { cSvg = 'crocusHoleZone5'; isLeft = false; sector='ПАРТЕР';}
+		if (mapID == 'zone6') { cSvg = 'crocusHoleZone6'; isLeft = true; sector='ПАРТЕР';}
+		if (mapID == 'zone7') { cSvg = 'crocusHoleZone7'; isLeft = false; sector='ПАРТЕР';}
+		if (mapID == 'zone8') { cSvg = 'crocusHoleZone8'; isLeft = true; sector='ПАРТЕР';}
+		if (mapID == 'zone9') { cSvg = 'crocusHoleZone9'; isLeft = false; sector='АМФИТЕАТР';}
+		if (mapID == 'zone10') { cSvg = 'crocusHoleZone10'; isLeft = true; sector='АМФИТЕАТР';}
+		if (mapID == 'zone11') { cSvg = 'crocusHoleZone11'; isLeft = true; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
+		if (mapID == 'zone12') { cSvg = 'crocusHoleZone12'; isLeft = false; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
+		if (mapID == 'zone13') { cSvg = 'crocusHoleZone13'; isLeft = true; sector='БЕЛЬЭТАЖ'; }
+		if (mapID == 'zone14') { cSvg = 'crocusHoleZone14'; isLeft = true; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
+		if (mapID == 'zone15') { cSvg = 'crocusHoleZone15'; isLeft = false; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
+		isHoverLock=true;
+		$("div#zoneInfoBox").hide();
+		$("div#" + mapID + "Map").animate({width: '100%', height: '100%'}, 1000, function () { //, marginLeft: -120
+			isHoverLock=false;
 			UpdateSeatsTarifValues();
 
+			// var cc = $("#"+cSvg)[0].getBoundingClientRect();
 			// if (isLeft) {
-			// 	$("div#infoBox")[0].style.left='';
-			// 	$("div#infoBox")[0].style.right='60px';
-			// 	$("div#infoBoxSeat")[1].style.left='';
-			// 	$("div#infoBoxSeat")[1].style.right='300px';
-			// 	// $("div#buyButton")[0].style.right='0px';
-			// $("div#buyButton")[0].style.left='';
+			// 	$("div#bannerBox")[0].style.left='';
+			// 	$("div#bannerBox")[0].style.right=  (window.innerWidth-cc.width-cc.x)+'px';
+			//
 			// } else {
-			// 	$("div#infoBox")[0].style.left='60px';
-			// 	$("div#infoBox")[0].style.right='0';
-			// 	$("div#infoBoxSeat")[1].style.left='300px';
-			// 	$("div#infoBoxSeat")[1].style.right='0';
-			// 	// $("div#buyButton")[0].style.left='';
-			// 	// $("div#buyButton")[0].style.righr='0px'
+			// 	$("div#bannerBox")[0].style.left= (cc.x+30)+'px';
+			// 	$("div#bannerBox")[0].style.right=''
+			//
 			// }
+
 
 			$("div#toolBar2").show();
 			$("div#toolBar1").hide();
-			$("div.infoBox").show();
-			$("div#exitBackButton").show();
-			$("div#buyButton").show();
-			//$("div#buyButton").click(getCustomerData);
+			$("a#exitBackButton").show();
+			$("div#totalBlock").show();
+			// $("div#infoBoxSeat").show();
+
+			// $("div#bannerBox").show();
+
+
+
+
 			renew();
 		});
+		$("div#infoBoxSeat").animate( { opacity: 1, height: 281 }, 500,function(ee) {
+			this.style.height = 'inherit';
+
+		} );
+		$("div#banerSector")[0].innerHTML= sector;
+		var dd = sessionStorage.getItem('discountData');
+		var dData = JSON.parse(dd);
+		if(dData.amount && dData.amount>0 && isDiscShow) {
+			$("div#discontBanner").show();
+			$("div#discontBanner")[0].innerHTML= 'вам скидка '+discountVal;
+		}
+		$("div#bannerBox").animate( { opacity: 1, height: 87 }, 500, function() {} );
 	}
 	if(mapID=='exitBackButton') {
+		var cont = $("div#zalContainer")[0].getBoundingClientRect();
 		var z = cSvg.substr(14);
 		$("div#toolBar2").hide();
-		$("div#buyButton").hide();
+		$("div#totalBlock").hide();
 		$("div#toolBar1").show();
 		$("div.infoBox").hide();
+		// $("div#infoBoxSeat").hide();
+		$("div#infoBoxSeat").animate( { opacity: 0, height: 0 }, 500, function() {} );
+		$("div#bannerBox").animate( { opacity: 0, height: 0 }, 500, function() {} );
+		// $("div#bannerBox").hide();
 		$("div#zone" + z + "Map").animate({width: 0, height: 0}, 500, function () { });
-		$("div#bigMap").animate({width: '100%', height: '100%'}, 1000, function () {
+		$("div#bigMap").animate({width: cont.width, height: cont.height}, 1000, function () {
+
 		});
+		cSvg = 'crocusHoleAll';
 	}
 
 }
@@ -402,7 +556,14 @@ var defZone = function(a) {
 	var svgRoot  = a.target.contentDocument.documentElement;
 	$("path.fil0",svgRoot).mouseover(opSw1);
 	$("path.fil0",svgRoot).mouseout(opSw2);
+	$("path.fil0",svgRoot).mousemove(opSwMove);
 	$("path.fil0",svgRoot).click(selectSeat);
+	//
+	// document.querySelector("div#zalContainer").onmouseenter=infoBoxEnt;
+	// document.querySelector("#crocusHoleZone1").onmousemove=infoBoxPos;
+	// document.querySelector("div#zalContainer").onmouseleave=infoBoxLeav;
+
+
 }
 
 var defMAin = function(a) {
@@ -410,25 +571,68 @@ var defMAin = function(a) {
 	for(var i=1; i<16; i++) {
 		$("path#zone" + i, svgRoot).mouseover(opSwOff);
 		$("path#zone" + i, svgRoot).mouseout(opSwOn);
+		$("path#zone" + i, svgRoot).mousemove(opSWmove);
 		$("path#zone" + i, svgRoot).click(sss);
 		if ($("path#zone" + i, svgRoot)[0])
 			$("path#zone" + i, svgRoot)[0].style.cursor = 'pointer';
+	};
+	// svgRoot.style.cursor = 'move';
+	// svgRoot.addEventListener('mousemove', mapDrag, {ddd: "fff"});
+};
+
+var svgX = 0;
+var cX = 0;
+var dX = 0;
+var sX = 0;
+var cSvgX = 0;
+var mapDrag = function(e) {
+	var svg = e.target;
+	var butt = e.buttons;
+	var cursor = {x: e.x }; //getCursorPosition(e, svg);
+	//console.log(cursor);
+
+	cX = cursor.x;
+	if(butt) {
+		dX = (sX - cX);
+		var ss = svg.viewBox.baseVal;
+		var max = ss.width;
+		//if(dX <0) dX =0;
+		//if(dX>max) dX =max;
+		// cSvgX=dX
+		var ww = cSvgX+dX;
+		ss.x = ( ww > 1300 ? 1300 : ( ww<0 ? 0 : ww) );
+	} else {
+		sX = cursor.x;
+		var ww = svg.viewBox.baseVal.x;
+		cSvgX = ( ww > 1300 ? 1300 : ( ww<0 ? 0 : ww) );
 	}
-}
+
+	//console.log('cX:'+cX+' sX:'+sX+' dX:'+dX+' svgX:'+cSvgX );
+};
+
+function getCursorPosition(event, svgElement) {
+	var svgPoint = svgElement.createSVGPoint();
+	svgPoint.x = event.clientX;
+	svgPoint.y = event.clientY;
+	return svgPoint.matrixTransform(svgElement.getScreenCTM().inverse());
+};
 
 var isDefine = [];
 var cSvg = "crocusHoleAll";
 
 $(document).ready(function(){
 
+	sessionStorage.removeItem('utm');
+	sessionStorage.removeItem('cData');
+	sessionStorage.removeItem('discountData');
+
 	$("div#shadow").click(formClose);
 	$("div#formCloseButt").click(formClose);
 	$("div#apruveChBox").click(krClick);
-	$("div#exitBackButton").click(sss);
-	$("div#buyButton").click(getCustomerData);
+	$("a#exitBackButton").click(sss);
+	$("a#buyButton").click(getCustomerData);
 	$("div#orderButton").click(orderCreate);
-	$("div#exitBackButton").hide();
-	//$("div#buyButton")[0].style.display='none';
+	$("a#exitBackButton").hide();
 	$("div.infoBox").hide();
 
 	cSvg = "crocusHoleAll";
@@ -444,10 +648,15 @@ $(document).ready(function(){
 	}
 
 	cSvg = "crocusHoleAll";
-
-	//window.addEventListener("resize", resize);
-	//resize();
+	window.addEventListener("resize", resize);
+	resize();
 	getTariffs();
+	getUtm();
+
+	// var input = document.querySelector("#customDataPhone");
+	//window.intlTelInput(input, {defaulteCountry: 'RU'});
+	$("input#customDataPhone").intlTelInput( {defaultCountry: "RU", preferredCountries: [ "RU" ], initialCountry: "RU",utilsScript: "/js/utils.js", autoFormat: true, autoPlaceholder: true } );
+
 });
 var getSvgRoot = function() {
 	var a = document.getElementById(cSvg);
@@ -460,6 +669,49 @@ var getSvgRoot = function() {
 	return null;
 };
 
+var refId='';
+var link='';
+var discountVal='';
+
+var checkDiscount = function() {
+	$.get( "/api/getdiscount", { ref_id: refId})
+		.done(function( resp,success ) {
+			if(success) {
+				var dData = resp.data;
+				sessionStorage.setItem('discountData', JSON.stringify(dData));
+				if(dData.discount_type=='procent') {
+					discountVal=dData.amount + '%'
+				} else {
+					discountVal=dData.amount+' ₽'
+				}
+			} else {
+				notify('error', resp.msg);
+			}
+		});
+}
+
+var getUtm = function() {
+	link = window.location.href;
+	var stt = window.location.search.substring(1);
+	var utm = '';
+	if(stt=='') {
+		utm = '{}';
+	} else {
+		var tt = stt.split('&');
+		tt.forEach(function(e) {
+			var t = e.split('=');
+			if(t[0]=='referrer' || t[0]=='utm_referrer') {
+				refId = t[1];
+			}
+			utm += ',"'+t[0]+'":"'+t[1]+'"'
+		});
+		utm = '{'+utm.substring(1)+'}';
+	}
+	sessionStorage.setItem('utm', utm);
+
+	checkDiscount();
+}
+
 var ws = new WebSocket('wss://'+document.location.host+'/ws');
 ws.onerror = function(event) {
 	notify('error','WS соединение с сервером не установленно.');
@@ -470,10 +722,12 @@ ws.onopen = function(e) {
 	e.target.send("WS: connection success/");
 };
 
+isWsLog = false;
+
 ws.onmessage = function(ws) {
 	var svgRoot  = getSvgRoot();
 	var msg = ws.data;
-	console.log('ws:' + msg);
+	if (isWsLog) console.log('ws:' + msg);
 	var cmd = jQuery.parseJSON(msg);
 	if(cmd) {
 		if(cmd.action == 'seatStateUpdate') {
@@ -529,10 +783,10 @@ ws.onmessage = function(ws) {
 	}
 };
 
+var isTooltipBlock = false;
+
 var resize = function(e) {
-	var h = window.innerHeight-280;
-	var h = window.innerWidth-200;
-	//$("div#tForPay")[0].style.height = h+'px';
+	isTooltipBlock = (window.innerWidth<601);
 }
 
 
@@ -597,16 +851,16 @@ var validateData = function(cData, form) {
 		errBox.textContent = ' ';
 		field.classList.remove('inputError');
 	}
-	if(!validatePhone(phone) || !validatePhoneLen(phone)) {
+	if(!validatePhone(phone) ) { //|| !validatePhoneLen(phone)
 		var field = $("input[name='phone']",form)[0];
-		var errBox = field.nextElementSibling;
+		var errBox = $("div#phoneErr")[0];
 		errBox.style.display = 'block';
 		errBox.textContent = 'Введен не правильный номер телефона.';
 		field.classList.add('inputError');
 		isValid = false;
 	} else {
 		var field = $("input[name='phone']",form)[0];
-		var errBox = field.nextElementSibling;
+		var errBox = $("div#phoneErr")[0];
 		// errBox.style.display = 'none';
 		errBox.textContent = ' ';
 		field.classList.remove('inputError');
@@ -636,10 +890,11 @@ const validateEmail = (email) => {
 };
 
 const validatePhone = (phone) => {
-	phone = phone.replaceAll(' ', '');
-	return phone.match(
-		/^[+7]*[(]{0,1}[0-9]{1,3}[)]{0,1}[-\s\./0-9]*$/g
-	);
+	// phone = phone.replaceAll(' ', '');
+	// return phone.match(
+	// 	/^[+7]*[(]{0,1}[0-9]{1,3}[)]{0,1}[-\s\./0-9]*$/g
+	// );
+	return $("input#customDataPhone").intlTelInput("isValidNumber");
 };
 
 const validateName = (name) => {
@@ -673,4 +928,32 @@ var chboxClick = function(inp) {
 		}
 	}
 	return false;
-}
+};
+
+function number_format( number, decimals, dec_point, thousands_sep ) {  // Format a number with grouped thousands
+	var i, j, kw, kd, km;
+
+	if( isNaN(decimals = Math.abs(decimals)) ){
+		decimals = 2;
+	}
+	if( dec_point == undefined ){
+		dec_point = ",";
+	}
+	if( thousands_sep == undefined ){
+		thousands_sep = ".";
+	}
+
+	i = parseInt(number = (+number || 0).toFixed(decimals)) + "";
+
+	if( (j = i.length) > 3 ){
+		j = j % 3;
+	} else{
+		j = 0;
+	}
+
+	km = (j ? i.substr(0, j) + thousands_sep : "");
+	kw = i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + thousands_sep);
+	kd = (decimals ? dec_point + Math.abs(number - i).toFixed(decimals).replace(/-/, 0).slice(2) : "");
+
+	return km + kw + kd;
+};

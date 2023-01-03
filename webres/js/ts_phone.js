@@ -1,36 +1,37 @@
-window.addEventListener("DOMContentLoaded", function() {
-    [].forEach.call( document.querySelectorAll('.ts_phone'), function(input) {
-    var keyCode;
-    function mask(event) {
-        event.keyCode && (keyCode = event.keyCode);
-        var pos = this.selectionStart;
-        if (pos < 3) event.preventDefault();
-        var matrix = "+7 (___) ___ ____",
-            i = 0,
-            def = matrix.replace(/\D/g, ""),
-            val = this.value.replace(/\D/g, ""),
-            new_value = matrix.replace(/[_\d]/g, function(a) {
-                return i < val.length ? val.charAt(i++) || def.charAt(i) : a
-            });
-        i = new_value.indexOf("_");
-        if (i != -1) {
-            i < 5 && (i = 3);
-            new_value = new_value.slice(0, i)
-        }
-        var reg = matrix.substr(0, this.value.length).replace(/_+/g,
-            function(a) {
-                return "\\d{1," + a.length + "}"
-            }).replace(/[+()]/g, "\\$&");
-        reg = new RegExp("^" + reg + "$");
-        if (!reg.test(this.value) || this.value.length < 5 || keyCode > 47 && keyCode < 58) this.value = new_value;
-        if (event.type == "blur" && this.value.length < 5)  this.value = ""
-    }
+function phone_mask(){
+	$.mask.definitions['9']='';
+	$.mask.definitions['d']='[0-9]';
+	$("input[name=phone],input.phone").mask("+7 ddd ddd-dd-dd");
+	$("input[name=phone],input.phone").intlTelInput({
+		autoHideDialCode:false,
+		autoPlaceholder:"aggressive",
+		placeholderNumberType:"MOBILE",
+		preferredCountries:['ru','th'],
+		separateDialCode:true,
+		utilsScript:"/assets/js/intl-tel-input/js/utils.js",
+		customPlaceholder:function(selectedCountryPlaceholder,selectedCountryData){
+			return '+'+selectedCountryData.dialCode+' '+selectedCountryPlaceholder.replace(/[0-9]/g,'_');
+		},
+		//allowDropdown:false,
+		//dropdownContainer:document.body,
+		//excludeCountries:["us"],
+		//formatOnDisplay:false,
+		//geoIpLookup:function(callback){
+		//	$.get("http://ipinfo.io",function(){},"jsonp").always(function(resp){
+		//		var countryCode =(resp&&resp.country)?resp.country:"";
+		//		callback(countryCode);
+		//	});
+		//},
+		//hiddenInput:"full_number",
+		//initialCountry:"auto",
+		//localizedCountries:{'de':'Deutschland'},
+		//nationalMode:false,
+		//onlyCountries:['us','gb','ch','ca','do'],
+	});
+	$("input[name=phone],input.phone").on("close:countrydropdown",function(e,countryData){
+		$(this).val('');
+		//var mask=$(this).closest('.intl-tel-input').find('.selected-dial-code').html()+' '+$(this).attr('placeholder').replace(/[0-9]/g,'d');
+		$(this).mask($(this).attr('placeholder').replace(/[_]/g,'d'));
+	});
+};
 
-    input.addEventListener("input", mask, false);
-    input.addEventListener("focus", mask, false);
-    input.addEventListener("blur", mask, false);
-    input.addEventListener("keydown", mask, false)
-
-  });
-
-});

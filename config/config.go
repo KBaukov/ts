@@ -55,6 +55,23 @@ type Configuration struct {
 		OfdOobject int
 		TaxSyst    int
 	}
+
+	AmoCRMSettings struct {
+		ClientId     string
+		ClientSecret string
+		OwnerLogin   string
+		OwnerPass    string
+		AccessUrl    string
+		RedirectUrl  string
+		PipeLineId   string
+	}
+	PipelineStages struct {
+		NewOrder        string
+		SuccessPayed    string
+		TicketSend      string
+		SuccessClosed   string
+		NoSuccessClosed string
+	}
 }
 
 // loadConfig читает и парсит настройки сервиса

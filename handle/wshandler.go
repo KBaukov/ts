@@ -50,7 +50,7 @@ func init() {
 	log.Println("#### Clear expired reserved Ticker start #####")
 
 	go CheckTicketsForSend(dd)
-	log.Println("#### Clear expired reserved Ticker start #####")
+	log.Println("#### CheckTickets for sent Ticker start #####")
 	//select {}
 
 }
@@ -169,7 +169,7 @@ func (c *Conn) readPump(db db.Database) {
 			msg := string(message)
 
 			if strings.Contains(msg, "\"action\":\"connect\"") {
-				if !sendMsg(c, "{action:connect,success:true}") {
+				if !sendMsg(c, "{\"action\":\"connect\",\"success\":true, \"device\":\""+devId+"\" }") {
 					break
 				} else {
 					log.Println("{action:connect,success:true}", c.deviceId)

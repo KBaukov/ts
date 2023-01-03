@@ -1,81 +1,141 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<html> 
-<head>
-<meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=0.3" />
-<!--metatextblock-->
-<title>FORTUNE 2050</title>
-<meta name="description" content="Ежегодный международный саммит Конфедерации «Сила Сообществ»" />
-<!--/metatextblock-->
-<meta http-equiv="x-dns-prefetch-control" content="on">
-<link rel="shortcut icon" href="images/favicon-32x32.png" type="image/x-icon" />
-<!-- Assets -->
-<link rel="stylesheet" href="css/ts_style.css" type="text/css" media="all" />
-<link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="all" >
-<script src="https://widget.cloudpayments.ru/bundles/cloudpayments.js"></script>
-<script src="js/jquery-1.10.2.min.js" charset="utf-8" ></script>
-<script src="js/bootstrap.js"></script>
-<script src="js/ts_fortune.js" charset="utf-8" ></script>
-<script src="js/ts_phone.js" charset="utf-8" ></script>
-</head>
-	<body class="ts-body" style="margin:0;">
-		<div class="ts-fon ts-fon-left">
-			<div class="ts-fon ts-fon-right">
-				<div class="ts-cColumn" >
-					<div>
-						<div style="width: 230px; margin-top: 100px;">
-							<object data="images/f2050.svg" type="image/svg+xml" width="100%" height="100%"></object>
-						</div>
-						<div style="width:430px; margin-top: 50px; height:114px;">
-							<div  style="width: 260px; float: left; height:114px;">
-								<object data="images/Header.svg" type="image/svg+xml" width="100%" height="100%"></object>
-							</div>
-							<div style="width: 155px; float: right; height:155px; margin-top: -20px;">
-								<object data="images/Cristal_ts.svg" type="image/svg+xml" width="100%" height="100%"></object>
-							</div>
-						</div>
-					
-					</div>
+<html>
 
-					<div id="zalContainer" style="min-width: 800px; ">
-			
-						<div id="tForPay" >
-							<div class="map" id="bigMap">
-								<object data="images/crocus_all_color_grupp_32.svg" type="image/svg+xml" id="crocusHoleAll" width="100%" height="100%"></object>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=0.5" />
+	<!--metatextblock-->
+	<title>FORTUNE 2050</title>
+	<meta name="description" content="Ежегодный международный саммит Конфедерации «Сила Сообществ»" />
+	<!--/metatextblock-->
+	<meta http-equiv="x-dns-prefetch-control" content="on">
+	<link rel="shortcut icon" href="images/favicon-32x32.png" type="image/x-icon" />
+	<!-- Assets -->
+	<link rel="stylesheet" href="css/ts_style.css" type="text/css" media="all" />
+	<link rel="stylesheet" href="css/intlTelInput.css" type="text/css" media="all">
+	<link rel="stylesheet" href="css/style.css" type="text/css" media="all">
+	<script src="https://widget.cloudpayments.ru/bundles/cloudpayments.js"></script>
+	<script src="js/jquery-1.10.2.min.js" charset="utf-8"></script>
+	<script src="js/intlTelInput-jquery.js" charset="utf-8"></script>
+	<script src="js/ts_fortune.js" charset="utf-8"></script>
+</head>
+
+<body class="ts-body" style="margin:0;">
+	
+
+	<div class="ts-fon ts-fon-left">
+		<div class="ts-fon ts-fon-right">
+			<div class="ts-cColumn">
+				<div class="header">
+					<div class="site-logo">
+						<img class="site-logo-img" src="images/new/site-logo.svg" alt="Fortune 2050">
+					</div>
+					<a href="#" class="back-link" id="exitBackButton" style="display:none;">Вернуться к выбору сектора</a>
+					<div class="header-info d-flex">
+						<div class="title-logo-2">
+							<div class="logo-wrap">
+								
+								<span>ВЫБРАТЬ</span>
+								<img class="cr-logo" src="images/cristal.png" alt="Выбрать билеты">
+								<span>БИЛЕТЫ</span>
+								
 							</div>
-							<div id="zone1Map" style="width:0;height:0; magrin-left: -150px; ">
-								<object data="images/crocus_all_right_violet.svg" type="image/svg+xml" id="crocusHoleZone1" width="80%" height="100%" ></object>
+							
+							
+						</div>
+						<div class="order-modal"  id="infoBoxSeat" style="opacity:0; height:0; overflow:hidden;">
+							<div class="d-flex order-modal-wrapper">
+								<div class="seats-block">
+									<table class="seats-table" id="selSeatsInfo">
+										<tr>
+											<th class="seats-table-title"><span
+													class="seats-table-title-text">Сектор</span>
+											</th>
+											<th class="seats-table-title"><span
+													class="seats-table-title-text">Ряд</span>
+											</th>
+											<th class="seats-table-title"><span
+													class="seats-table-title-text">Место</span>
+											</th>
+											<th class="seats-table-title"><span
+													class="seats-table-title-text">Стоимость</span></th>
+											<th></th>
+										</tr>
+							
+									</table>
+								</div>
+								<div class="total-block">
+									<span class="total-block-info">Итого:</span>
+									<!--span class="total-block-value" id="exTtotalAmount">0 ₽</span-->
+									<span class="total-block-value" id="totalAmount">0 ₽</span>
+									<a href="#" class="total-block-btn total-block-btn_active" id="buyButton">Оплатить выбранные билеты</a>
+								</div>
 							</div>
-							<div id="zone2Map" style="width:0;height:0">
-								<object data="images/crocus_all_left_violet.svg" type="image/svg+xml" id="crocusHoleZone2" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone3Map" style="width:0;height:0;  magrin-left: -150px; ">
-								<object data="images/crocus_all_right_yellow.svg" type="image/svg+xml" id="crocusHoleZone3" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone4Map" style="width:0;height:0">
-								<object data="images/crocus_all_left_yellow.svg" type="image/svg+xml" id="crocusHoleZone4" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone5Map" style="width:0;height:0">
-								<object data="images/crocus_all_right_blue.svg" type="image/svg+xml" id="crocusHoleZone5" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone6Map" style="width:0;height:0;">
-								<object data="images/crocus_all_left_blue.svg" type="image/svg+xml" id="crocusHoleZone6" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone7Map" style="width:0;height:0; max-height:800px;">
-								<object data="images/crocus_all_right_green.svg" type="image/svg+xml" id="crocusHoleZone7" width="80%" height="90%" ></object>
-							</div>
-							<div id="zone8Map" style="width:0;height:0">
-								<object data="images/crocus_all_left_green.svg" type="image/svg+xml" id="crocusHoleZone8" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone9Map" style="width:0;height:0">
-								<object data="images/crocus_all_right_orange.svg" type="image/svg+xml" id="crocusHoleZone9" width="80%" height="100%" ></object>
-							</div>
-							<div id="zone10Map" style="width:0;height:0">
-								<object data="images/crocus_all_left_orange.svg" type="image/svg+xml" id="crocusHoleZone10" width="80%" height="100%" ></object>
-							</div>
-							<!--div id="zone11Map" style="width:0;height:0">
+						</div>
+					</div>
+					
+				</div>
+				
+				<div class="section-title-wrapper" style="opacity:0; height:0; overflow:hidden;" id="bannerBox">
+				  <div class="d-flex section-title-inner">
+					<div id="banerSector" class="section-title">VIP-Партер</div>
+					<div class="discount-label" id="discontBanner" style="display:none;">
+					Вам скидка 30%
+					</div>
+				  </div>
+				</div>
+		
+				
+				<div id="zalContainer">
+					<div class="map" id="bigMap">
+						<object data="images/crocus_all_color_grupp_32.svg" type="image/svg+xml" id="crocusHoleAll"
+							width="100%" height="100%"></object>
+					</div>
+					<div id="tForPay">
+						
+						<div id="zone1Map" style="width:0;height:0; magrin-left: -150px; ">
+							<object class="doc80" data="images/crocus_all_right_violet.svg" type="image/svg+xml" id="crocusHoleZone1"
+								width="80%" height="100%"></object>
+						</div>
+						<div id="zone2Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_left_violet.svg" type="image/svg+xml" id="crocusHoleZone2"
+								width="80%" height="100%"></object>
+						</div>
+						<div id="zone3Map" style="width:0;height:0;  magrin-left: -150px; ">
+							<object data="images/crocus_all_right_yellow.svg" type="image/svg+xml" id="crocusHoleZone3"
+								width="75%" height="100%"></object>
+						</div>
+						<div id="zone4Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_left_yellow.svg" type="image/svg+xml" id="crocusHoleZone4"
+								width="75%" height="100%"></object>
+						</div>
+						<div id="zone5Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_right_blue.svg" type="image/svg+xml" id="crocusHoleZone5"
+								width="75%" height="100%"></object>
+						</div>
+						<div id="zone6Map" style="width:0;height:0;">
+							<object class="doc80" data="images/crocus_all_left_blue.svg" type="image/svg+xml" id="crocusHoleZone6"
+								width="75%" height="100%"></object>
+						</div>
+						<div id="zone7Map" style="width:0;height:0; max-height:800px;">
+							<object class="doc80" data="images/crocus_all_right_green.svg" type="image/svg+xml" id="crocusHoleZone7"
+								width="75%" height="90%"></object>
+						</div>
+						<div id="zone8Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_left_green.svg" type="image/svg+xml" id="crocusHoleZone8"
+								width="75%" height="100%"></object>
+						</div>
+						<div id="zone9Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_right_orange.svg" type="image/svg+xml" id="crocusHoleZone9"
+								width="75%" height="100%"></object>
+						</div>
+						<div id="zone10Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_left_orange.svg" type="image/svg+xml" id="crocusHoleZone10"
+								width="75%" height="100%"></object>
+						</div>
+						<!--div id="zone11Map" style="width:0;height:0">
 								<object data="images/crocus_all_right_pink.svg" type="image/svg+xml" id="crocusHoleZone11" width="100%" height="100%" ></object>
 							</div>
 							<div id="zone12Map" style="width:0;height:0">
@@ -84,210 +144,188 @@
 							<div id="zone13Map" style="width:0;height:0">
 								<object data="images/crocus_all_left_pink.svg" type="image/svg+xml" id="crocusHoleZone13" width="100%" height="100%" ></object>
 							</div-->
-							<div id="zone11Map" style="width:0;height:0">
-								<object data="images/crocus_all_right_grey.svg" type="image/svg+xml" id="crocusHoleZone11" width="60%" height="100%" ></object>
-							</div>
-							<div id="zone12Map" style="width:0;height:0">
-								<object data="images/crocus_all_left_grey.svg" type="image/svg+xml" id="crocusHoleZone12" width="60%" height="100%" ></object>
-							</div>
+						<div id="zone11Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_right_grey.svg" type="image/svg+xml" id="crocusHoleZone11"
+								width="60%" height="100%"></object>
+						</div>
+						<div id="zone12Map" style="width:0;height:0">
+							<object class="doc80" data="images/crocus_all_left_grey.svg" type="image/svg+xml" id="crocusHoleZone12" 
+								width="60%" height="100%"></object>
+						</div>
 
-							<div id="infoBox" class="infoBox" >
-								<div class="frameWrap" style="width:240px; float: left;">
-									<div class="framePad">
-										<table class="legend" style="width:240px;">
-											<tr><td ><div class="infoLabel">Сектор</div></td><td><div class="infoData" id="seatZoneName">Партер</div></td>
-											<tr><td ><div class="infoLabel">Стоимость</div></td> <td><div class="infoData" id="seatPrice">от 50000 ₽</div></td>
-										</table>
-									</div>						
-								</div>
-							</div>
-							<div id="infoBoxSeat" class="infoBox" >
-								<div class="frameWrap" style="width:220px; float: left;">
-									<div class="framePad">
-										<table class="seatInfoTable" id="selSeatsInfo">
-											<tr><td style="border-bottom:1px solid #555555; padding-bottom: 5px;"><div class="infoData" style="padding-left:20px;">Место</div></td> 
-											<td style="border-bottom:1px solid #555555; padding-bottom: 5px;;"><div class="infoData">Стоимость</div></td>
-											
-										</table>
-									</div>						
-								</div>
-							</div>
-							<div id="buyButton" style="display:none;">
-								<div class="buttWrap" style="width:240px;">
-									<div class="buttPad" style="">
-										Купить выбраные места
-									</div>						
-								</div>
+						<div id="infoBox" class="infoBox"  style="display:none;">
+							<div class="InfoBoxWrap" style="padding: 0 0 10px 0">
+								<table class="legend" style="width:140px;">
+									<tr>
+										<td>
+											<div class="infoData" id="seatZoneName">Партер</div>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<div class="infoData" id="seatName">Ряд 1б, Место 22</div>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<div class="infoData" id="seatPrice">от 50000 ₽</div>
+										</td>
+									</tr>
+								</table>
 							</div>
 						</div>
-						
+
+						<div id="zoneInfoBox" class="infoBox" style="display:none;">
+							<div class="InfoBoxWrap" style="padding: 0 0 10px 0">
+								<table class="legend" style="width:140px;">
+									<tr>
+										<td>
+											<div class="infoData" id="tarName">Партер</div>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<div class="infoData" id="tarPrice">от 50000 ₽</div>
+										</td>
+									</tr>
+									<!--tr><td ><div class="infoDataSmall" >Свободных мест: <span>00</span></div></td></tr-->
+								</table>
+							</div>
+						</div>
 
 					</div>
-					<div id="toolBar1" style="width:100%; position:relateve; min-height: 140px; color:#fff; padding: 30px 0;">
-						<div style="width:100%; ">
-							<div class="frameWrap" style="width:320px; float: left;">
-								<div class="framePad" >
-									<table class="legend">
-										<tr><td ><img src="/images/b1.png" /> </td> <td>Вип-партер</td><td ><img src="/images/b2.png" /> </td> <td>Амфитеатр</td></tr>
-										<tr><td ><img src="/images/b3.png" /> </td> <td>Партер</td><td ><img src="/images/b4.png" /> </td> <td>Ложи бельэтажа</td></tr>
-									</table>
-								</div>						
-							</div>
-							<div class="frameWrap" style="width:210px; float: left;">
-								<div class="framePad">
-									<table class="legend">
-										<tr><td ><div class="infoLabel">Сектор</div></td> <td><div class="infoData" id="tarName">Партер</div></td>
-										<tr><td ><div class="infoLabel">Стоимость</div></td> <td><div class="infoData" id="tarPrice">от 50 000 руб</div></td>
-									</table>
-								</div>						
-							</div>
-						</div>	
-						<!--div class="frameWrap" style="width:200px; float: right; margin: 15px 0 0 0;">
-							<div class="framePad">
-								<div  id="cancelBuut"> Отменить </div>									
-							</div>						
-						</div-->
-					</div>
-					<div id="toolBar2" style="width:100%; position:relateve; min-height: 140px; color:#fff; display:none; padding: 30px 0;">
-						<div class="buttFrWrap" style="width:300px; float: left;"  id="exitBackButton">
-							<div class="buttFrPad" style="padding:20px 5px">
-								Вернуться к выбору сектора
-							</div>						
-						</div>
-						<!--div class="frameWrap" style="width:300px; float: right; margin: 15px 0 0 0;">
-							<div class="framePad">
-								<div class="buttPad" id="buyButton"> Купить выбраные места </div>									
-							</div>						
-						</div-->
-					</div>
-					
-					
-					<!--div id="notif" >
-						<div id="notifyHeader" > dsdd </div>
-						<div id="notifyMsg"></div>					
-					</div-->
-					
-					<!--/br style="clear:both"-->
 
-					<!--div class="ts-podv" >
-						<div style="float: left; width: 55%;" >
-							<div class="ts-podv-box-left" style="width:160px; min-width:150px; text-align:left; padding-right:10px; "> 
-								<img src="images/f2050.png"  />
-							</div>
-							<div class="ts-podv-box-left" style="width:280px; min-width:270px; text-align:left; padding: 10px 10px 0 0;"> 
-								<img src="images/CrocusCH.png"  />
-							</div>
-							<div class="ts-podv-box-left" style="width:40%; min-width:200px; text-align:left;  padding-top: 10px;" > 
-								<a href="/" style="color: inherit; ">Политика конфиденциальности</a>
-								<div>support@x10academy.ru</div>
-							</div>
-						</div>
-						<div style="float: right; width: 45%;" >
-							<div class="ts-podv-box-right" style="width:60%; min-width:200px;  padding-left:30px; padding-top: 10px;" > 
-								<div>125167, г. Москва, Ленинградский проспект, дом 36, строение 11, этаж 2, часть кабинета 202</div>
-							</div>							
-							<div class="ts-podv-box-right"  style="width:30%; min-width:170px; text-align:right; padding-right:30px;  padding-top: 10px;"> 
-								<a href="/" style="color: inherit">Оферта</a>
-								<div>+7 (495) 778 18-38</div>
-							</div>						
-							
-						</div>
-					</div-->
-					
-					<div class="row"  style="border-top: 1px solid #565656; padding:56px 0;" >
-						<div class="col-sm-4 tmp" style="min-width:470px; text-align:left; padding:0;"> 
-							<img src="images/logoPod.svg"  />
-						</div>
-						<!--div class="col-sm-1"></div-->
-						<div class="col-sm-2 tmp"  style="min-width: 200px; padding-top:12px;"> 
-							<a href="/" style="color: inherit; ">Политика конфиденциальности</a>
-							<div>support@x10academy.ru</div>
-						</div>
-						<!--div class="col-sm-1"></div-->
-						<div class="col-sm-1 tmp"  style="min-width: 120px; padding:12px 0 0 0; text-align:center;"> 
-							<a href="/" style="color: inherit">Оферта</a>
-							<div>+7 (495) 778 18 38</div>
-						</div>
-						<!--div class="col-sm-1"></div-->
-						<div class="col-sm-3 tmp"  style="min-width: 300px; float:right; text-align:left; padding:12px 20px 0 20px; "> 
-							<div>125167, г. Москва, Ленинградский проспект, дом 36, строение 11, этаж 2, часть кабинета 202</div>
-						</div>							
-						
-					</div>
-					
+
 				</div>
-			</div>
-		</div>
-		
-		<!---   -->
-		<div id="shadow" style="display:none; opacity:0;">	
-			<div class="formClose" >
-				<svg id="formCloseButt" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="none" data-v-74a8408a="" data-v-3ef26e2a=""><path fill-rule="evenodd" clip-rule="evenodd" d="M9.85355 10.5607L19 19.7071L19.7071 19L10.5607 9.85355L19.7071 0.707108L19 0L9.85355 9.14645L0.707107 0L0 0.707107L9.14645 9.85355L0 19L0.707107 19.7071L9.85355 10.5607Z" fill="#E2E8EF" data-v-3ef26e2a=""></path></svg>
-			</div>
-			<div id="forfPad" >
-				<img src="/images/form_header.png" width="500px"/>
-				<div style="padding: 0 30px;">
-					
-					<div class="formHeader">Оформление заказа</div>
-					<div class="formHeaderInfo" style="line-height: 180%;">Пожалуйста, укажите свои реальные данные, потому что по ним будет оформлен и отправлен билет</div>
-					<div class="tsForm" style="height:380px;">
-						<form  action='/api/order'  id="userData" >
-							<div class="inputForm" >
-								<input id="customDataName" type="text" autocomplete="name" name="name" class="t-input js-tilda-rule " 
-									value="" placeholder="Фамилия Имя" style="color:#000000; border:1px solid #c9c9c9; border-radius: 5px; 
-									-moz-border-radius: 5px; -webkit-border-radius: 5px;
-									width:90%; padding:20px;"> 
-								<div class="t-input-error"> </div>
-							</div>
-							<div class="inputForm">
-								<input id="customDataEmail" type="text" autocomplete="email" name="email" class="t-input js-tilda-rule " value="" 
-								placeholder="Email" style="color:#000000; border:1px solid #c9c9c9; border-radius:5px; 
-								-moz-border-radius: 5px; -webkit-border-radius: 5px;
-								width:90%; padding:20px;"> 
-								<div class="t-input-error"> </div>
-							</div>
-							<div class="inputForm">
-								<input id="customDataPhone" type="tel" autocomplete="tel" name="phone" data-phonemask-init="no" 
-								data-phonemask-id="520766106" data-phonemask-lid="1495810410810" data-phonemask-maskcountry="RU" 
-								class="ts_phone" value="" placeholder="+7(999)999-9999" 
-								style="color:#000000; border:1px solid #c9c9c9; border-radius: 5px; 
-								-moz-border-radius: 5px; -webkit-border-radius: 5px;
-								width:90%; padding:20px;"> 
-								<div class="t-input-error"> </div>
-							</div>
-							<div class="checkForm"> 
-								<label class="t-checkbox__control t-text t-text_xs" style="">
-									<input type="checkbox" name="checkbox" value="no" class="t-checkbox js-tilda-rule" data-tilda-req="1" onchange="chboxClick(this)">
-									
-									<div class="t-checkbox__indicator" id="apruveChBox" ></div>
-									<div style="width: 90%; float: right; margin-top: -5px; line-height: 150%;">
-										Я принимаю условия 
-										<a href="/confidential" target="_blank" style="color: rgb(134, 85, 255);">пользовательского соглашения</a> 
-										&nbsp;&nbsp;&nbsp;и&nbsp;&nbsp;&nbsp;<a href="/oferta" target="_blank" style="color: rgb(134, 85, 255);">договора публичной оферты</a>									
+				<div id="toolBar1" class="site-toolbar">
+					<div>
+						<div class="frameWrap">
+							<div class="framePad">
+								<div class="site-toolbar-inner d-flex">
+									<div class="site-toolbar__item">
+										Вип-партер
 									</div>
-										
-								</label> 
-								<div class="t-input-error" style="padding: 10px 0;"> </div>
-								 
+									<div class="site-toolbar__item">
+										Амфитеатр
+									</div>
+									<div class="site-toolbar__item">
+										Партер
+									</div>
+									<div class="site-toolbar__item">
+										Ложи бельэтаж
+									</div>
+								</div>
 							</div>
-							
-						</form>
+						</div>
 					</div>
-					<div class="formHeaderInfo">Мы не передаем контактные данные своих клиентов третьим лицам и не используем их для спам-рассылок</div>
 				</div>
-				<div style="padding: 30px; width:92%;" > 
-					<div style="" id="orderButton">
-							Продолжить
-					</div> 
-				</div>
+
+				<footer class="footer">
+					<div class="d-flex footer-info-contacts-wrapper">
+						<div class="d-flex footer-info-wrapper">
+							<img src="images/logoPod.svg" class="footer-info-logo" alt="Fortune 2050">
+							<div class="footer-info-content">
+								<a href="tel:+74957781838" class="footer-info-phone">+7 (495) 778 18-38</a>
+								<address>
+									125167, г. Москва, Ленинский проспект,
+									дом 36, строение 11, этаж 2, часть кабинета 202
+								</address>
+							</div>
+						</div>
+						<div class="d-flex footer-contacts-wrapper">
+							<div class="footer-contact">
+								<a href="mailto:fortune2050@x10academy.ru"
+									class="footer-contact-email">fortune2050@x10academy.ru</a>
+								<span>Возврат билетов</span>
+							</div>
+							<div class="footer-contact">
+								<a href="mailto:support@x10academy.ru"
+									class="footer-contact-email">support@x10academy.ru</a>
+								<span>Служба поддержки</span>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex footer-links">
+						<a href="#" class="footer-link">Политика конфиденциальности</a>
+						<a href="#" class="footer-link">Оферта</a>
+					</div>
+				</footer>
 
 			</div>
-			
 		</div>
-		
-		
-<!--####################################--><!--#################################################################-->
+	</div>
+	<!---   -->
+	<div id="shadow" style="display:none; opacity:0;">
+		<div class="formClose">
+			<svg id="formCloseButt" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"
+				fill="none" stroke="none" data-v-74a8408a="" data-v-3ef26e2a="">
+				<path fill-rule="evenodd" clip-rule="evenodd"
+					d="M9.85355 10.5607L19 19.7071L19.7071 19L10.5607 9.85355L19.7071 0.707108L19 0L9.85355 9.14645L0.707107 0L0 0.707107L9.14645 9.85355L0 19L0.707107 19.7071L9.85355 10.5607Z"
+					fill="#E2E8EF" data-v-3ef26e2a=""></path>
+			</svg>
+		</div>
+		<div id="forfPad" class="form-order" style="display: block;">
+		<div class="form-order__inner">
+			<a class="form-order__logo">
+				<img class="form-order__logo-img" src="images/logo-form.svg" alt="Fortune 2050">
+			</a>
+			<div class="form-order__header">Оформление заказа</div>
+			<div class="form-order__header-info">Пожалуйста, укажите свои реальные данные, потому
+				что по ним будет оформлен и отправлен билет</div>
+			<div class="form-order__form">
+				<form action='/api/order' id="userData">
+					<div class="form-order__input-wrapper">
+						<input id="customDataName" type="text" autocomplete="name" name="name" class="form-order__input"
+							value="" placeholder="Фамилия Имя">
+						<div class="t-input-error"> </div>
+					</div>
+					<div class="form-order__input-wrapper">
+						<input id="customDataEmail" type="text" autocomplete="email" name="email" value=""
+							placeholder="Email" class="form-order__input">
+						<div class="t-input-error"> </div>
+					</div>
+					<div class="form-order__input-wrapper">
+						<input id="customDataPhone" type="tel" autocomplete="tel" name="phone" data-phonemask-init="yes"
+							data-phonemask-id="520766106" data-phonemask-lid="1495810410810"
+							data-phonemask-maskcountry="RU" value="" placeholder="+7(999)999-9999"
+							class="form-order__input">
+						<div class="t-input-error" id="phoneErr"> </div>
+					</div>
+					<div class="form-order-checkbox">
+						<label class="custom-checkbox">
+							<input type="checkbox" name="checkbox" value="no" data-tilda-req="1">
+							<div class="form-order__check-info">
+								<div class="form-order__check-info-inner">
+									Я принимаю условия
+									<a class="form-order__check-info-link" href="/confidential"
+										target="_blank">пользовательского соглашения</a>
+									и <a class="form-order__check-info-link" href="/oferta" target="_blank">договора
+										публичной оферты</a>
+								</div>
+							</div>
+						</label>
+						<div class="t-input-error"> </div>
+					</div>
+				</form>
+			</div>
+			<div class="formHeaderInfo">Мы не передаем контактные данные своих клиентов третьим лицам и не
+				используем их для спам-рассылок</div>
+		</div>
+		<div id="orderButton" class="form-order__btn">
+			Продолжить
+		</div>
 
+	</div>
+
+	</div>
+
+
+	<!--####################################-->
+	<!--#################################################################-->
+	<!--script>
 		
-	</body>
+	</script-->
+
+</body>
+
 </html>

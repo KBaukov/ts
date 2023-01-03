@@ -46,5 +46,21 @@
     "OfdMathod":  0,
     "OfdOobject": 0,
     "TaxSyst": 0
+  },
+  "AmoCrmSettings": {
+    "ClientId":     "70b6d029-547c-4187-a01b-06a82a6e4553",
+    "ClientSecret": "qmFXhQ2vYayqDPOMxWc6VGCQntDWbyRUE8FvSJihtpGchB9JXFWAZMcY3ALuZt0b",
+    "OwnerLogin":   "kbaukov@gmail.com",
+    "OwnerPass":    "igDxu1",
+    "AccessUrl":    "https://aperlik.amocrm.ru/oauth2/access_token",
+    "RedirectUrl":  "https://tickets.fortune2050.com/api/amo",
+    "PipeLineId":   "6220562"
+  },
+  "PipelineStages" : {
+    "NewOrder": "53649538",
+    "SuccessPayed": "53649542",
+    "TicketSend": "142",
+    "SuccessClosed": "142",
+    "NoSuccessClosed": "143"
   }
 }
