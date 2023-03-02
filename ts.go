@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/KBaukov/ServDeskConnector/db"
 	"github.com/KBaukov/ts/amo"
 	"github.com/KBaukov/ts/config"
-	"github.com/KBaukov/ts/db"
 	"github.com/KBaukov/ts/handle"
 	"log"
 	"net/http"
@@ -74,6 +74,7 @@ func main() {
 	http.HandleFunc("/paysuccess", handle.ServePagesRes)
 	http.HandleFunc("/crocusrules", handle.ServePagesRes)
 	http.HandleFunc("/confidential", handle.ServePagesRes)
+	http.HandleFunc("/click", handle.ServePagesRes)
 	http.HandleFunc("/vozvrat", handle.ServePagesRes)
 	http.HandleFunc("/oferta", handle.ServePagesRes)
 	http.HandleFunc("/api/", handle.ServeApi(db))

@@ -4,9 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/KBaukov/ServDeskConnector/db"
 	"github.com/KBaukov/ts/amo"
 	"github.com/KBaukov/ts/config"
-	"github.com/KBaukov/ts/db"
 	"github.com/KBaukov/ts/ent"
 	"github.com/gorilla/sessions"
 	"golang.org/x/net/context"
@@ -99,6 +99,9 @@ func ServePagesRes(w http.ResponseWriter, r *http.Request) {
 	}
 	if path == "/crocuszal" {
 		ff = "/pages/ts.html"
+	}
+	if path == "/click" {
+		ff = "/pages/click.html"
 	}
 
 	http.ServeFile(w, r, "./"+webres+ff)

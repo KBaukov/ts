@@ -4,51 +4,64 @@ addSeatForPay = function(node) {
 	if(sklad[0]) {
 		sklad[0].classList.add(id);
 
-		var tab = $("table#selSeatsInfo");
-		tab.append( $('<tr>', { id: 'tt_'+id}) );
-		var dd = $('tr', tab);
+		var tab = $("div#selSeatsInfo");
+		tab.append( $('<div>', { id: 'tt_'+id , class: 'order-block-info-item'}) );
+		var dd = $('div', tab);
 		var n = dd.length;
-		var tr = $(dd[n-1]);
-		tr.append($('<td>', { text: sector}));
-		tr.append($('<td>', {text: formatSeat(id,1,null)}));
-		tr.append($('<td>', {text: formatSeat(id,null, 1)}));
+		var div= $(dd[n-1]);
+		div.append($('<span>', { text: sector, class: 'order-block-info-item__title'}));
+		div.append($('<span>', {text: 'Ряд '+formatSeat(id,1,null)+', место '+formatSeat(id,null, 1), class: 'order-block-info-item__seat'}));
 		var pr = node.getAttribute('tp');
 		var fpr = number_format(pr,0, '.', ' ');
-		tr.append($('<td>', { text: fpr+' ₽' }));
-		tr.append($('<td>', { }));
-		dd = $('td', tab);
-		n = dd.length;
-		var td =$(dd[n-1]);
+		div.append($('<div>', {text: fpr+' ₽' , class: 'order-block-info-item__price'}));
 		var aa = $('<a>', { class: 'delete-row', ss: id });
-		 td.append(aa);  //class: 'infoDataSeat',
+		div.append(aa);  //class: 'infoDataSeat',
 
-		var pr = parseInt(node.getAttribute('tp'));
-		totalAmount += pr;
-		var dd = sessionStorage.getItem('discountData');
-		var dData = JSON.parse(dd);
-		if(dData.amount >0 && isDiscShow) {
-			if(dData.discount_type=='procent') {
-				discountAmount = Math.round(totalAmount * dData.amount/100);
-			} else {
-				discountAmount = totalAmount - dData.amount;
-			}
+		var ppr = parseInt(pr);
+		totalAmount += ppr;
 
-		} else
-			discountAmount = 0;
+		// var dd = sessionStorage.getItem('discountData');
+		// var dData = JSON.parse(dd);
+		// if(dData.amount >0 && isDiscShow) {
+		// 	if(dData.discount_type=='procent') {
+		// 		discountAmount = Math.round(totalAmount * dData.amount/100);
+		// 	} else {
+		// 		discountAmount = totalAmount - dData.amount;
+		// 	}
+		//
+		// } else
+		discountAmount = getCurrDiscountAmaunt();
+
 		if(discountAmount>0) {
-			$("span#totalAmount")[0].innerHTML = '<span class="old-price">'+
-				number_format(totalAmount,0, '.', ' ')+' ₽</span>'
-				+number_format((totalAmount-discountAmount),0, '.', ' ') + ' ₽';
+			$("div#totalAmount")[0].innerHTML = '<div class="old-price">'+
+				number_format(totalAmount,0, '.', ' ')+' ₽</div><div> '
+				+number_format((totalAmount-discountAmount),0, '.', ' ') + ' ₽</div>';
 		} else {
-			$("span#totalAmount")[0].innerHTML = number_format(totalAmount,0, '.', ' ') +' ₽';
+			$("div#totalAmount")[0].innerHTML = number_format(totalAmount,0, '.', ' ') +' ₽';
 		}
-
 
 		aa.click(removeRow);
 
 	} else
 		return null;
 };
+
+var getCurrDiscountAmaunt = function() {
+	var dd = sessionStorage.getItem('discountData');
+	var dData = JSON.parse(dd);
+	var da;
+	if(dData.amount >0 && isDiscShow) {
+		if(dData.discount_type=='procent') {
+			da = Math.round(totalAmount * dData.amount/100);
+		} else {
+			da = totalAmount - dData.amount;
+		}
+
+	} else
+		da = 0;
+
+	return da;
+}
 
 var totalAmount=0;
 
@@ -87,12 +100,24 @@ var removeSeatFromPay = function(node) {
 	var sklad = $("div#tForPay");
 	if(sklad[0]) {
 		sklad[0].classList.remove(id);
-		var tab = $("table#selSeatsInfo");
-		$("tr#tt_"+id).remove();
+		var tab = $("div#selSeatsInfo");
+		$("div#tt_"+id).remove();
 
 		var pr = parseInt(node.getAttribute('tp'));
 		totalAmount -= pr;
-		$("span#totalAmount")[0].innerHTML = totalAmount+' ₽';
+
+		discountAmount = getCurrDiscountAmaunt();
+
+		if(discountAmount>0) {
+			$("div#totalAmount")[0].innerHTML = '<div class="old-price">'+
+				number_format(totalAmount,0, '.', ' ')+' ₽</div><div> '
+				+number_format((totalAmount-discountAmount),0, '.', ' ') + ' ₽</div>';
+		} else {
+			$("div#totalAmount")[0].innerHTML = number_format(totalAmount,0, '.', ' ') +' ₽';
+		}
+
+
+		//$("div#totalAmount")[0].innerHTML = totalAmount+' ₽';
 	}
 
 };
@@ -173,7 +198,7 @@ var opSwOn = function(e) {
 };
 var opSwOff = function(e) {
 	var z = e.target;
-	e.target.style.fillOpacity = 0.75;
+	e.target.style.fillOpacity = .75;
 	if(z.id) {
 		var id = z.id;
 		var zNum = id.substring(4);
@@ -181,7 +206,11 @@ var opSwOff = function(e) {
 			var node = zoneTarifs[i];
 			if (''+node.zone_num == zNum ) {
 				$("div#tarName").html(node.zone_name);
-				$("div#tarPrice").html('от '+node.min+' ₽');
+				//if(zNum=='13' || zNum=='15') {
+					//$("div#tarPrice").html('Скоро в продаже');
+				//} else {
+					$("div#tarPrice").html('от ' + node.min + ' ₽');
+				//}
 			}
 		}
 	}
@@ -204,25 +233,8 @@ var opSWmove = function(e) {
 	}
 };
 
-// function oMousePos(svg, evt) {
-// 	var ClientRect = svg.getBoundingClientRect();
-// 	return { //objeto
-// 		x: Math.round(evt.clientX - ClientRect.left),
-// 		y: Math.round(evt.clientY - ClientRect.top)
-// 	}
-// };
-//
-// function getCursorPosition(event, svgElement) {
-// 	//var svg = getSvgRoot();
-// 	var svgPoint = svgElement.createSVGPoint();
-// 	svgPoint.x = event.clientX;
-// 	svgPoint.y = event.clientY;
-// 	return svgPoint.matrixTransform(svgElement.getScreenCTM().inverse());
-// };
-
 var selectSeat = function(e) {
 	var s;
-
 	if(e.type) {
 		s = e.target;
 	} else {
@@ -302,7 +314,9 @@ var renew = function(e) {
 				for(var i=0; i<data.length; i++) {
 					var s = $("path#"+data[i].svg_id, svgRoot);
 					if(s[0]) {
-						if(sklad.length=0 || sklad.includes(data[i].svg_id)) {
+						var ssk = sklad;
+						if (sklad instanceof DOMTokenList) ssk = Array.from(sklad);
+						if(ssk && ssk.length!=0 && ssk.includes(data[i].svg_id)) {
 							continue;
 						}
 						if(data[i].state > 0) {
@@ -310,8 +324,10 @@ var renew = function(e) {
 								s[0].classList.add('seatBlock');
 							} else
 								s[0].classList.add('seatOcup');
+							s[0].style.opacity = .9;
 						} else {
 							s[0].classList.remove('seatOcup');
+							s[0].style.opacity = .9;
 						}
 					}
 					//$("div#infoBox")[0].style.left = "-200px;"
@@ -331,9 +347,10 @@ var orderLog = function(stage, seats, order_num, paymentResult, reson) {
 	var sesData = JSON.parse(sessionStorage.getItem('cData'));
 	var leadId =  sesData.amoData.lead_id;
 	var contactId =  sesData.amoData.contact_id;
+	var msg = (code==0 ? '':cpErrors[code]);
 
 	$.post( "/api/order/log", { stage: stage, seat_ids: seats, order_number: order_num, code:paymentResult.code,
-		message:paymentResult.message, succes: (paymentResult.success ? 'true':'false' ), reason:reson , lead_id: leadId, contact_id: contactId })
+		message:msg, succes: (paymentResult.success ? 'true':'false' ), reason:msg , lead_id: leadId, contact_id: contactId })
 		.done(function( resp,success ) {
 			if(code==200) {
 				sessionStorage.removeItem('cData');
@@ -362,7 +379,12 @@ var BuySeats = function(payData, seatsIds) {
 		},
 		onComplete: function (paymentResult, options) {
 			//paymentResult.message = 'Платеж совершен но не подтвержден';
-			orderLog('payComplete', seatsIds, order_num, paymentResult, {});
+			var code = paymentResult.code;
+			if(code!=0) {
+				var res = cpErrors[code];
+				orderLog('payFail', seatsIds, order_num, paymentResult, res);
+			} else
+				orderLog('payComplete', seatsIds, order_num, paymentResult, {});
 		}
 	});
 
@@ -472,7 +494,7 @@ var sss = function(e) {
 	var mapID = e.target.id ? e.target.id : e.target.parentElement.id;
 	isLeft = false;
 	if(mapID.includes('zone')) {
-		$("div#bigMap").animate({width: 0, height: 0}, 500, function () {});
+
 		if (mapID == 'zone1') { cSvg = 'crocusHoleZone1'; isLeft = false; sector='VIP-ПАРТЕР'; isDiscShow = false;}
 		if (mapID == 'zone2') { cSvg = 'crocusHoleZone2'; isLeft = true;  sector='VIP-ПАРТЕР'; isDiscShow = false;}
 		if (mapID == 'zone3') { cSvg = 'crocusHoleZone3'; isLeft = false; sector='VIP-ПАРТЕР';}
@@ -486,14 +508,16 @@ var sss = function(e) {
 		if (mapID == 'zone11') { cSvg = 'crocusHoleZone11'; isLeft = true; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
 		if (mapID == 'zone12') { cSvg = 'crocusHoleZone12'; isLeft = false; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
 		if (mapID == 'zone13') { cSvg = 'crocusHoleZone13'; isLeft = true; sector='БЕЛЬЭТАЖ'; }
-		if (mapID == 'zone14') { cSvg = 'crocusHoleZone14'; isLeft = true; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
-		if (mapID == 'zone15') { cSvg = 'crocusHoleZone15'; isLeft = false; sector='БЕЛЬЭТАЖ'; isDiscShow = false;}
+		if (mapID == 'zone14') { cSvg = 'crocusHoleZone14'; isLeft = true; sector='БЕЛЬЭТАЖ'; isDiscShow = false; }
+		if (mapID == 'zone15') { cSvg = 'crocusHoleZone15'; isLeft = false; sector='БЕЛЬЭТАЖ'; isDiscShow = false;  }
+
+		$("div#bigMap").animate({width: 0, height: 0}, 500, function () {});
 		isHoverLock=true;
 		$("div#zoneInfoBox").hide();
+		$("div#toolBar1").hide();
 		$("div#" + mapID + "Map").animate({width: '100%', height: '100%'}, 1000, function () { //, marginLeft: -120
 			isHoverLock=false;
 			UpdateSeatsTarifValues();
-
 			// var cc = $("#"+cSvg)[0].getBoundingClientRect();
 			// if (isLeft) {
 			// 	$("div#bannerBox")[0].style.left='';
@@ -504,32 +528,25 @@ var sss = function(e) {
 			// 	$("div#bannerBox")[0].style.right=''
 			//
 			// }
-
-
 			$("div#toolBar2").show();
-			$("div#toolBar1").hide();
+			//$("div#toolBar1").hide();
 			$("a#exitBackButton").show();
 			$("div#totalBlock").show();
-			// $("div#infoBoxSeat").show();
-
-			// $("div#bannerBox").show();
-
-
-
 
 			renew();
 		});
-		$("div#infoBoxSeat").animate( { opacity: 1, height: 281 }, 500,function(ee) {
-			this.style.height = 'inherit';
-
-		} );
+		$("div#infoBoxSeat").show();
+		// .animate( { opacity: 1, height: 281 }, 500,function(ee) {
+		// 	this.style.height = 'inherit';
+		//
+		// } );
 		$("div#banerSector")[0].innerHTML= sector;
-		var dd = sessionStorage.getItem('discountData');
-		var dData = JSON.parse(dd);
-		if(dData.amount && dData.amount>0 && isDiscShow) {
-			$("div#discontBanner").show();
-			$("div#discontBanner")[0].innerHTML= 'вам скидка '+discountVal;
-		}
+		// var dd = sessionStorage.getItem('discountData');
+		// var dData = JSON.parse(dd);
+		// if(dData.amount && dData.amount>0 && isDiscShow) {
+		// 	$("div#discontBanner").show();
+		// 	$("div#discontBanner")[0].innerHTML= 'вам скидка '+discountVal;
+		// }
 		$("div#bannerBox").animate( { opacity: 1, height: 87 }, 500, function() {} );
 	}
 	if(mapID=='exitBackButton') {
@@ -539,10 +556,10 @@ var sss = function(e) {
 		$("div#totalBlock").hide();
 		$("div#toolBar1").show();
 		$("div.infoBox").hide();
-		// $("div#infoBoxSeat").hide();
-		$("div#infoBoxSeat").animate( { opacity: 0, height: 0 }, 500, function() {} );
+		$("div#infoBoxSeat").hide();
+		//$("div#infoBoxSeat").animate( { opacity: 0, height: 0 }, 500, function() {} );
 		$("div#bannerBox").animate( { opacity: 0, height: 0 }, 500, function() {} );
-		// $("div#bannerBox").hide();
+		$("a#exitBackButton").hide();
 		$("div#zone" + z + "Map").animate({width: 0, height: 0}, 500, function () { });
 		$("div#bigMap").animate({width: cont.width, height: cont.height}, 1000, function () {
 
@@ -684,6 +701,10 @@ var checkDiscount = function() {
 				} else {
 					discountVal=dData.amount+' ₽'
 				}
+				if(dData.amount && dData.amount>0 && isDiscShow) {
+					$("div#discontBanner").show();
+					$("span#discBannerText")[0].innerHTML= 'Приглашение от мастера - '+discountVal;
+				}
 			} else {
 				notify('error', resp.msg);
 			}
@@ -747,6 +768,7 @@ ws.onmessage = function(ws) {
 					s[0].style.fillOpacity = 0.9;
 				}
 			}
+
 		}
 		if(cmd.action == 'sysunreserves') {
 			if(cmd.seats) {
@@ -781,6 +803,7 @@ ws.onmessage = function(ws) {
 			}
 		}
 	}
+	renew();
 };
 
 var isTooltipBlock = false;
@@ -957,3 +980,39 @@ function number_format( number, decimals, dec_point, thousands_sep ) {  // Forma
 
 	return km + kw + kd;
 };
+
+var cpErrors = new Array();
+cpErrors[5001] = 'Отказ эмитента проводить онлайн-операцию';
+cpErrors[5003] = 'Отказ эмитента проводить онлайн-операцию';
+cpErrors[5004] = 'Карта потеряна';
+cpErrors[5005] = 'Отказ эмитента без объяснения причин';
+cpErrors[5006] = 'Отказ сети проводить операцию или неправильный CVV-код';
+cpErrors[5007] = 'Карта потеряна';
+cpErrors[5012] = 'Карта не предназначена для онлайн-платежей';
+cpErrors[5013] = 'Слишком маленькая или слишком большая сумма операции';
+cpErrors[5014] = 'Некорректный номер карты';
+cpErrors[5015] = 'Эмитент не найден';
+cpErrors[5019] = 'Отказ эмитента без объяснения причин';
+cpErrors[5030] = 'Ошибка на стороне эквайера — неверно сформирована транзакция';
+cpErrors[5031] = 'Неизвестный эмитент карты';
+cpErrors[5033] = 'Истек срок утери карты';
+cpErrors[5034] = 'Отказ эмитента — подозрение на мошенничество';
+cpErrors[5036] = 'Карта не предназначена для платежей';
+cpErrors[5041] = 'Карта потеряна';
+cpErrors[5043] = 'Карта украдена';
+cpErrors[5051] = 'Недостаточно средств';
+cpErrors[5054] = 'Карта просрочена или неверно указан срок действия';
+cpErrors[5057] = 'Ограничение на карте';
+cpErrors[5059] = 'Транзакция была отклонена банком по подозрению в мошенничестве';
+cpErrors[5062] = 'Карта не предназначена для платежей';
+cpErrors[5063] = 'Карта заблокирована из-за нарушений безопасности';
+cpErrors[5065] = 'Превышен лимит операций по карте';
+cpErrors[5082] = 'Неверный CVV-код';
+cpErrors[5091] = 'Эмитент недоступен';
+cpErrors[5092] = 'Эмитент недоступен';
+cpErrors[5096] = 'Ошибка банка-эквайера или сети';
+cpErrors[5204] = 'Операция не может быть обработана по прочим причинам';
+cpErrors[5206] = '3-D Secure авторизация не пройдена';
+cpErrors[5207] = '3-D Secure авторизация недоступна';
+cpErrors[5300] = 'Лимиты эквайера на проведение операций';
+cpErrors[5113] = 'Шлюз не поддерживает эмитента неРФ';

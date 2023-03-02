@@ -1,196 +1,179 @@
-@font-face {
-  font-family: "Manrope";
-  src: url("../fonts/Manrope-Regular.ttf") format("truetype");
-}
-@font-face {
-    font-family: "druk_text_wide_cyrbold";
-    src: url("../fonts/Druk Text Wide Cyr Bold.woff2") format("woff2"),
-        url("../fonts/Druk Text Wide Cyr Bold.woff") format("woff");
-    font-weight: normal;
-    font-style: normal;
-}
-
-.ts-body {
-	background-color: #000000;
-	margin: 0;
-	padding: 0;	
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	line-height: 152%;
-	
-}
-
 .ts-fon {
-	width:100%; height:100%; 
-	background-repeat: no-repeat;
-	position:fixed;
-	top:0; left: 0;
-}	
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
 .ts-fon-left {
-	background-image: url("../images/Vector10.png");
-	background-color: transparent;
-	
+    background-image: url("../images/Vector10.png");
+    background-color: transparent;
 }
 .ts-fon-right {
-	background-image: url("../images/Vector13.png");
-	background-color: transparent;
-	background-position: top right;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	overflow-y: scroll;
+    background-image: url("../images/Vector13.png");
+    background-color: transparent;
+    background-position: top right;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: scroll;
 }
-.ts-cColumn { 
-	height:100%; width:90%; max-width:1500px;
-	margin: 0px auto;
-	text-align: center;
-	
+.ts-cColumn {
+    width: 100%;
+    height: 100%;
+    text-align: center;
 }
-
-.ts-podv {	 
-	/*width: 100%; max-width:1500px;  
+.ts-cColumn-inner {
+    width: 90%;
+    max-width: 1500px;
+    margin: 0px auto;
+}
+.ts-podv {
+    /*width: 100%; max-width:1500px;  
 	border-top: 1px solid #565656;
 	padding-top:35px;
 	padding-bottom:20px;
 	position:static;*/
-	
-	width: 100%;
-	
-	display: grid;
+
+    width: 100%;
+
+    display: grid;
     grid-gap: 5px;
     grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-    grid-template-rows: 100px; 
-	
-	/*display: grid;
+    grid-template-rows: 100px;
+
+    /*display: grid;
     grid-template-columns: 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px ;
     grid-template-rows: 100px ;  */
-	
-	padding-top: 56px;
-	border-top: 1px solid #565656;
-	
-	color: #CACACA;
-	
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.9em;
-	line-height: 152%;
+
+    padding-top: 56px;
+    border-top: 1px solid #565656;
+
+    color: #cacaca;
+
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 152%;
 }
 .pod1 {
-	grid-column-start: 1;
+    grid-column-start: 1;
     grid-column-end: 7;
-	padding-top: 10px;
-	text-align: left;
+    padding-top: 10px;
+    text-align: left;
 }
 .pod2 {
-	grid-column-start: 7;
+    grid-column-start: 7;
     grid-column-end: 8;
 }
 .pod3 {
-	grid-column-start: 8;
+    grid-column-start: 8;
     grid-column-end: 12;
-	padding-top: 10px;
-	text-align: left;
+    padding-top: 10px;
+    text-align: left;
 }
 .pod4 {
-	grid-column-start: 12;
+    grid-column-start: 12;
     grid-column-end: 13;
 }
 .pod5 {
-	grid-column-start: 13;
+    grid-column-start: 13;
     grid-column-end: 15;
-	padding-top: 10px;
-	text-align: right;
+    padding-top: 10px;
+    text-align: right;
 }
 .pod6 {
-	grid-column-start: 15;
+    grid-column-start: 15;
     grid-column-end: 16;
 }
 .pod7 {
-	grid-column-start: 16;
+    grid-column-start: 16;
     grid-column-end: 20;
-	padding-top: 10px;
-	text-align: left;
+    padding-top: 10px;
+    text-align: left;
 }
 
 div.tmp {
-	color:#CACACA;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.9em;
-	line-height: 180%;
-	padding-top:10px;
+    color: #cacaca;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 180%;
+    padding-top: 10px;
 }
 
-a:hover { color:#9D76FF !important; } 
-
-
+a:hover {
+    color: #9d76ff;
+}
 
 .ts-podv-box-left {
-	height: inherit;
-	float: left;
+    height: inherit;
+    float: left;
     vertical-align: middle;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 18px;
-	line-height: 152%;
-	/* or 27px */
-	color: #CACACA;
-	width: 25%;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 152%;
+    /* or 27px */
+    color: #cacaca;
+    width: 25%;
 }
 .ts-podv-box-right {
-	height: inherit;
-	float: right;
+    height: inherit;
+    float: right;
     vertical-align: middle;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 152%;
-	/* or 27px */
-	color: #CACACA;
-	text-align: left;
-	width: 25%;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 152%;
+    /* or 27px */
+    color: #cacaca;
+    text-align: left;
+    width: 25%;
 }
-div.map { 
-	width:100%; height:100%;	
-}
-
-div.infoBox { 
-	position: fixed;
-	background-image: url("../images/vv.png");	
-	background-position: center bottom;
-	background-repeat: no-repeat;
-	padding: 0 0 8px 0;
-	
+div.map {
+    width: 100%;
+    height: 100%;
 }
 
-div#infoBox { 
-	top:60px; left: 300px;
-	width: 140px; 
-	position: fixed;
-	z-index: 99999999999999;
+div.infoBox {
+    position: fixed;
+    background-image: url("../images/vv.png");
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    padding: 0 0 8px 0;
+}
+
+div#infoBox {
+    top: 60px;
+    left: 300px;
+    width: 140px;
+    position: fixed;
+    z-index: 99999999999999;
 }
 div.InfoBoxWrap {
-	border: 1px #fff solid;
-	border-radius: 7px;
-	background-color:#ffffff;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 600;
-	font-size: 1em;
-	line-height: 152%;
-	/* or 27px */
-	color: #000000;
+    border: 1px #fff solid;
+    border-radius: 7px;
+    background-color: #ffffff;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 600;
+    font-size: 1em;
+    line-height: 152%;
+    /* or 27px */
+    color: #000000;
 }
-div#zoneInfoBox { 
-	top:-600px; left: -300px; 
-	position: fixed;	
-	width: 140px; 
-	z-index: 99999999999999;
+div#zoneInfoBox {
+    top: -600px;
+    left: -300px;
+    position: fixed;
+    width: 140px;
+    z-index: 99999999999999;
 }
 
 /*
@@ -214,337 +197,331 @@ div#infoBoxSeat {
 */
 
 div.discountLabel {
-	font-family: 'Manrope' !important;
-	font-style: normal;
-	font-weight: 300;
-	font-size: .3em !important;
-	line-height: 100%;
-	color: #ffffff;
-	background-color:#CC1010;
-	border-radius: 12px;
+    font-family: "Manrope" !important;
+    font-style: normal;
+    font-weight: 300;
+    font-size: 0.3em !important;
+    line-height: 100%;
+    color: #ffffff;
+    background-color: #cc1010;
+    border-radius: 12px;
 }
 
-div.banerBoxLabel { 
-
-	font-family: 'druk_text_wide_cyrbold';
-	font-style: normal;
-	font-weight: 700;
-	font-size: 1.7em;
-	line-height: 152%;
-	color: #ffffff;
+div.banerBoxLabel {
+    font-family: "druk_text_wide_cyrbold";
+    font-style: normal;
+    font-weight: 700;
+    font-size: 1.7em;
+    line-height: 152%;
+    color: #ffffff;
 }
 
 div#buyButton {
-	position: absolute;
-	top:200px; right: 60px;
-	width: 240px; height:44px;
+    position: absolute;
+    top: 200px;
+    right: 60px;
+    width: 240px;
+    height: 44px;
 }
 
-div#zalContainer {text-align: center; }
-div#tForPay { 
-	padding:20px;
-	//overflow-x: scroll;
+div#zalContainer {
+    text-align: center;
+}
+div#tForPay {
+    padding: 20px;
+    //overflow-x: scroll;
 }
 
 div.buttWrap {
-	background: linear-gradient(25deg, #6700FF, #000000, #cccccc);
-	border-radius: 9px;
-	padding: 1px;
+    background: linear-gradient(25deg, #6700ff, #000000, #cccccc);
+    border-radius: 9px;
+    padding: 1px;
 }
 div.buttPad {
-	border-radius: 7px;
-	background-color: #8655FF;
-	color: #ffffff;
-	cursor: pointer;
-	padding:  20px 5px;
-	font-weight: 700;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-size: 1em !important;
+    border-radius: 7px;
+    background-color: #8655ff;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 20px 5px;
+    font-weight: 700;
+    font-family: "Manrope";
+    font-style: normal;
+    font-size: 1em !important;
 }
-div.buttPad:hover { background-color: #9D76FF; }
-
+div.buttPad:hover {
+    background-color: #9d76ff;
+}
 
 div.buttFrWrap {
-	background: linear-gradient(25deg, #6700FF, #000000, #cccccc);
-	border-radius: 9px;
-	padding: 1px;
+    background: linear-gradient(25deg, #6700ff, #000000, #cccccc);
+    border-radius: 9px;
+    padding: 1px;
 }
 div.buttFrPad {
-	border-radius: 7px;
-	background-color: #000000;
-	color: #ffffff;
-	cursor: pointer;
-	padding-bottom:5px;
-	font-weight: 700;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-size: 1em;
+    border-radius: 7px;
+    background-color: #000000;
+    color: #ffffff;
+    cursor: pointer;
+    padding-bottom: 5px;
+    font-weight: 700;
+    font-family: "Manrope";
+    font-style: normal;
+    font-size: 1em;
 }
-div.buttFrPad:hover { background-color:#090612; }
+div.buttFrPad:hover {
+    background-color: #090612;
+}
 
-
-div.frameWrap {  
-	background: linear-gradient(25deg, #6700FF, #000000, #cccccc);
-	border-radius: 19px;
-	padding: 1px;
-	margin-right: 20px;
-	 
+div.frameWrap {
+    background: linear-gradient(25deg, #6700ff, #000000, #cccccc);
+    border-radius: 19px;
+    padding: 1px;
+    margin-right: 20px;
 }
 div.framePad {
-	background: #000000;
-	color:#fff;
-	border-radius: inherit;
-	padding-bottom:15px;
-	padding-top:15px;
-	
-}	
-div.infoLabel { 	
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.7em;
-	line-height: 100%;
-	float: left;
-	width: 25px;
-	padding-top: 3px;
+    background: #000000;
+    color: #fff;
+    border-radius: inherit;
+    padding-bottom: 15px;
+    padding-top: 15px;
+}
+div.infoLabel {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.7em;
+    line-height: 100%;
+    float: left;
+    width: 25px;
+    padding-top: 3px;
 }
 div.infoData {
-	border-radius: inherit;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.9em;
-	line-height: 100%;
-	float: left;
-	
+    border-radius: inherit;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 100%;
+    float: left;
 }
 div.infoDataSmall {
-	border-radius: inherit;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.7em;
-	line-height: 100%;
-	float: left;
-	
+    border-radius: inherit;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.7em;
+    line-height: 100%;
+    float: left;
 }
-div.infoLabelSeat { 	
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.7em;
-	line-height: 100%;
-	float: left;
-	
-	padding: 3px 5px 5px 5px;
+div.infoLabelSeat {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.7em;
+    line-height: 100%;
+    float: left;
+
+    padding: 3px 5px 5px 5px;
 }
 div.infoDataSeat {
-	border-radius: inherit;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.9em;
-	line-height: 100%;
-	float: left;
-	
+    border-radius: inherit;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 100%;
+    float: left;
 }
 
-
 table.seatInfoTable {
-	margin-left: 10px;
-	padding-top: 10px;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.9em;
-	line-height: 100%;
-	width: 200px;
+    margin-left: 10px;
+    padding-top: 10px;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 100%;
+    width: 200px;
 }
 
 table.legend {
-	margin-left: 20px;
-	padding-top: 10px;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.9em;
-	line-height: 100%;
-	width: 510px;
+    margin-left: 20px;
+    padding-top: 10px;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 100%;
+    width: 510px;
 }
 table.legend tr td {
-	text-align: left;
-	height:21px;
+    text-align: left;
+    height: 21px;
 }
 
 div.notifyBox {
-	width:200px; /*height:100px;*/ 
-	position: fixed; top:-140px; right: 80px; 
-	z-index:100000000; 
-	color:#ffffff; border-radius: 8px;
-	padding: 10px  10px 20px 10px; 
-	
-	
+    width: 200px; /*height:100px;*/
+    position: fixed;
+    top: -140px;
+    right: 80px;
+    z-index: 100000000;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 10px 10px 20px 10px;
 }
 div.bodyerror {
-	background-color:#FEDCDA;
+    background-color: #fedcda;
 }
 div.bodywarn {
-	background-color:#FFE5B2;
+    background-color: #ffe5b2;
 }
 div.bodyinfo {
-	background-color:#D9E8FF;
+    background-color: #d9e8ff;
 }
-div.headerinfo { 
-	background-image: url("../images/info_ico.png");	
-	background-position: left top;
-	background-repeat: no-repeat;
-	padding: 3px 0 10px 25px;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 100%;
-	color: #01173C;
-	height: 30px;
-	
+div.headerinfo {
+    background-image: url("../images/info_ico.png");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding: 3px 0 10px 25px;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 100%;
+    color: #01173c;
+    height: 30px;
 }
-div.headererror { 
-	padding: 3px 0 10px 25px;
-	background-image: url("../images/error_ico.png");
-	background-position: left top;
-	background-repeat: no-repeat;
-	padding: 0 0 10px 20px;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 100%;
-	color: #431716;
-	height: 30px;
+div.headererror {
+    padding: 3px 0 10px 25px;
+    background-image: url("../images/error_ico.png");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding: 0 0 10px 20px;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 100%;
+    color: #431716;
+    height: 30px;
 }
-div.headerwarn { 
-	padding: 3px 0 10px 25px;
-	background-image: url("../images/warn_ico.png");
-	background-position: left top;
-	background-repeat: no-repeat;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 100%;
-	color: #3A2500;
-	height: 30px;
+div.headerwarn {
+    padding: 3px 0 10px 25px;
+    background-image: url("../images/warn_ico.png");
+    background-position: left top;
+    background-repeat: no-repeat;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 100%;
+    color: #3a2500;
+    height: 30px;
 }
-div.msginfo { 
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.7em;
-	line-height: 100%;
-	color: #01173C;
+div.msginfo {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.7em;
+    line-height: 100%;
+    color: #01173c;
 }
-div.msgerror { 
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.7em;
-	line-height: 100%;
-	color: #431716;
+div.msgerror {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.7em;
+    line-height: 100%;
+    color: #431716;
 }
-div.msgwarn { 
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.7em;
-	line-height: 100%;
-	color: #3A2500;
+div.msgwarn {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.7em;
+    line-height: 100%;
+    color: #3a2500;
 }
 
 div#shadow {
-	position: fixed;
-	top:0; bottom:0;
-	left:0; right:0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	overflow-y: scroll;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 100%;
-	background-image: url("../images/ffonn.png");
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: scroll;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 100%;
+    background-image: url("../images/ffonn.png");
 }
-
-
 
 div.t-input-error {
-	color:#ff0000;
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 800;
-	font-size: 0.8em;
-	line-height: 100%;
-	padding: 5px 0 15px 0;
+    color: #ff0000;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 800;
+    font-size: 0.8em;
+    line-height: 100%;
+    padding: 5px 0 15px 0;
 }
 input.inputError {
-	border-color: #ff0000;
-}	
+    border-color: #ff0000;
+}
 
 div.formHeader {
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 800;
-	font-size: 2.2em;
-	line-height: 100%;
-	text-align: center;
-	padding: 30px 0 20px 0;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 800;
+    font-size: 2.2em;
+    line-height: 100%;
+    text-align: center;
+    padding: 30px 0 20px 0;
 }
 
 div.formHeaderInfo {
-	font-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 0.8em;
-	line-height: 100%;
-	text-align: center;
-	padding: 40px 0 20px 0;;
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 0.8em;
+    line-height: 100%;
+    text-align: center;
+    padding: 40px 0 20px 0;
 }
 
 div.inputForm {
-	padding:5px 0;
-	
+    padding: 5px 0;
 }
 div.checkForm {
-	padding:8px 0;
-	
+    padding: 8px 0;
 }
-div.inputForm{
-	height:90px;	
+div.inputForm {
+    height: 90px;
 }
 
-div.inputForm input{
-	padding:20px 0;
-	ont-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 100%;
-	
+div.inputForm input {
+    padding: 20px 0;
+    ont-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 100%;
 }
-div.inputForm label{
-	padding:20px 0;
-	ont-family: 'Manrope';
-	font-style: normal;
-	font-weight: 500;
-	font-size: 1em;
-	line-height: 100%;
-	
-	
+div.inputForm label {
+    padding: 20px 0;
+    ont-family: "Manrope";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1em;
+    line-height: 100%;
 }
 .t-checkbox__indicator {
-	position: relative;
+    position: relative;
     display: inline-block;
     vertical-align: middle;
     height: 20px;
@@ -552,14 +529,14 @@ div.inputForm label{
     border: 2px solid #ccc;
     box-sizing: border-box;
     margin-right: 10px;
-    -webkit-transition: all .2s;
-    transition: all .2s;
-	background-color: #ffffff;
-	margin-left: -24px;
-	margin-top: -6px;
-	background-image: url("../images/chBox.png");
-	background-position: left;
-	background-repeat: no-repeat;
+    -webkit-transition: all 0.2s;
+    transition: all 0.2s;
+    background-color: #ffffff;
+    margin-left: -24px;
+    margin-top: -6px;
+    background-image: url("../images/chBox.png");
+    background-position: left;
+    background-repeat: no-repeat;
 }
 /*
 div#orderButton {
@@ -583,30 +560,28 @@ div#orderButton {
 div#orderButton:hover { background-color: #9D76FF; }
 */
 
-
-div.formClose { 
-	height:20px;
-	width:20px;
-	position:fixed;
-	top:10px;
-	right: 30px;
-	
+div.formClose {
+    height: 20px;
+    width: 20px;
+    position: fixed;
+    top: 10px;
+    right: 30px;
 }
 svg#formCloseButt {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 div#zalContainer::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
- 
+
 /* Скрываем scrollbar для IE, Edge и Firefox */
 div#zalContainer {
-  -ms-overflow-style: none;  /* IE и Edge */
-  scrollbar-width: none;  /* Firefox */
-  cursor: pointer;
+    -ms-overflow-style: none; /* IE и Edge */
+    scrollbar-width: none; /* Firefox */
+    cursor: pointer;
 }
-	
+
 .d-flex {
     display: flex;
     justify-content: space-between;
@@ -622,10 +597,6 @@ div#zalContainer {
     display: block;
     max-width: 100%;
     height: auto;
-}
-.header-info {
-    margin-top: 30px;
-    margin-bottom: 40px;
 }
 /*------Footer------*/
 .footer {
@@ -1002,9 +973,6 @@ input[type="checkbox"].form-order__check {
     .total-block-value {
         font-size: 1em;
     }
-    .ts-cColumn {
-        width: calc(100% - 30px);
-    }
     .site-logo {
         margin-top: 59px;
         margin-bottom: 15px;
@@ -1097,35 +1065,32 @@ input[type="checkbox"].form-order__check {
 }
 
 .title-logo-2 {
-	font-family: "druk_text_wide_cyrbold";
+    font-family: "druk_text_wide_cyrbold";
     font-weight: 700;
     font-size: 2.3em;
     line-height: 110%;
     color: #fff;
     text-transform: uppercase;
-	color:#ffffff;
+    color: #ffffff;
 }
 
 img.cr-logo {
-	float:right;
-	width:80px;
-	height:80px;
-	
+    float: right;
+    width: 80px;
+    height: 80px;
 }
 div.logo-wrap {
-	width:370px; 
-	float:left; 
-	text-align:left;
+    width: 370px;
+    float: left;
+    text-align: left;
 }
 
-@media ( max-width: 850px) {
+@media (max-width: 850px) {
     div.logo-wrap {
-		width:290px; 
+        width: 290px;
     }
-	img.cr-logo {
-		width:55px;
-		height:55px;
-		
-	}
-
+    img.cr-logo {
+        width: 55px;
+        height: 55px;
+    }
 }
