@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/KBaukov/ServDeskConnector/db"
 	"github.com/KBaukov/ts/amo"
 	"github.com/KBaukov/ts/config"
+	"github.com/KBaukov/ts/db"
 	"github.com/KBaukov/ts/handle"
 	"log"
 	"net/http"
